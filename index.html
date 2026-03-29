@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hamo Streaming Hub — Watch Movies, Series, Live TV & More</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        h: {
+                            bg: '#050508',
+                            surface: '#0a0a12',
+                            card: '#0f0f18',
+                            elevated: '#161625',
+                            accent: '#e50914',
+                            accentH: '#ff1a25',
+                            gold: '#f5c518',
+                            purple: '#8b5cf6',
+                            cyan: '#06b6d4',
+                            green: '#22c55e',
+                            pink: '#ec4899',
+                            orange: '#f97316',
+                            text: '#ededf2',
+                            sub: '#9494a4',
+                            muted: '#555568',
+                            border: 'rgba(255,255,255,0.05)'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth}
+        body{font-family:'Inter',system-ui,sans-serif;background:#050508;color:#ededf2;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+        ::-webkit-scrollbar{width:5px;height:3px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#e50914,#8b5cf6);border-radius:99px}
+        #cursorGlow{position:fixed;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(229,9,20,0.06) 0%,transparent 70%);pointer-events:none;z-index:1;transform:translate(-50%,-50%);transition:opacity .3s}
+        #loader{position:fixed;inset:0;z-index:9999;background:#050508;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .8s,visibility .8s}
+        #loader.hide{opacity:0;visibility:hidden;pointer-events:none}
+        .loader-cinematic{position:relative;width:80px;height:80px}
+        .loader-cinematic .ring{position:absolute;inset:0;border:2px solid transparent;border-radius:50%}
+        .loader-cinematic .ring:nth-child(1){border-top-color:#e50914;animation:spin 1s linear infinite}
+        .loader-cinematic .ring:nth-child(2){inset:8px;border-right-color:#8b5cf6;animation:spin 1.5s linear infinite reverse}
+        .loader-cinematic .ring:nth-child(3){inset:16px;border-bottom-color:#f5c518;animation:spin 2s linear infinite}
+        .loader-play{position:absolute;inset:22px;display:flex;align-items:center;justify-content:center}
+        .loader-play span{color:white;font-size:18px;animation:pulse 1s ease-in-out infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes pulse{0%,100%{opacity:.4;transform:scale(.9)}50%{opacity:1;transform:scale(1.1)}}
+        #particles{position:fixed;inset:0;z-index:0;pointer-events:none}
+        .glass{background:rgba(10,10,18,0.7);backdrop-filter:blur(30px) saturate(1.3);-webkit-backdrop-filter:blur(30px) saturate(1.3);border:1px solid rgba(255,255,255,0.05)}
+        .glass-strong{background:rgba(10,10,18,0.85);backdrop-filter:blur(40px) saturate(1.5);-webkit-backdrop-filter:blur(40px) saturate(1.5);border:1px solid rgba(255,255,255,0.06)}
+        .announce-bar{background:linear-gradient(90deg,#e50914 0%,#b20710 25%,#e50914 50%,#b20710 75%,#e50914 100%);background-size:200% 100%;animation:shimmerBg 4s linear infinite}
+        @keyframes shimmerBg{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        .hero-bg{background:radial-gradient(ellipse 90% 70% at 65% 35%,rgba(229,9,20,0.07) 0%,transparent 55%),radial-gradient(ellipse 50% 50% at 15% 85%,rgba(139,92,246,0.05) 0%,transparent 55%),radial-gradient(ellipse 40% 40% at 85% 75%,rgba(6,182,212,0.04) 0%,transparent 50%),#050508}
+        .hero-vignette{background:linear-gradient(to top,#050508 0%,rgba(5,5,8,0.6) 30%,rgba(5,5,8,0.15) 100%)}
+        .grad-text{background:linear-gradient(135deg,#e50914 0%,#f5c518 40%,#8b5cf6 80%,#06b6d4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .grad-text-sm{background:linear-gradient(135deg,#e50914,#f5c518);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .float-shape{position:absolute;border-radius:50%;filter:blur(1px);opacity:.08;pointer-events:none}
+        .content-card{transition:all .5s cubic-bezier(.22,.68,0,1.2)}
+        .content-card:hover{transform:scale(1.05) translateY(-12px);z-index:30}
+        .content-card:hover .card-overlay-fx{opacity:1}
+        .content-card:hover .card-actions{opacity:1;transform:translateY(0)}
+        .content-card:hover .card-img{transform:scale(1.15)}
+        .content-card:hover .card-glow{opacity:1}
+        .card-overlay-fx{opacity:0;transition:opacity .4s ease;background:linear-gradient(to top,rgba(5,5,8,0.98) 0%,rgba(5,5,8,0.6) 45%,transparent 100%)}
+        .card-actions{opacity:0;transform:translateY(10px);transition:all .4s cubic-bezier(.22,.68,0,1.2) .05s}
+        .card-img{transition:transform .7s cubic-bezier(.22,.68,0,1.2)}
+        .card-glow{position:absolute;inset:-2px;border-radius:inherit;background:linear-gradient(135deg,rgba(229,9,20,0.3),rgba(139,92,246,0.3),rgba(6,182,212,0.2));opacity:0;transition:opacity .5s;z-index:-1;filter:blur(8px)}
+        .scroll-row{scroll-behavior:smooth;-ms-overflow-style:none;scrollbar-width:none}
+        .scroll-row::-webkit-scrollbar{display:none}
+        .btn-accent{background:linear-gradient(135deg,#e50914 0%,#b20710 100%);box-shadow:0 4px 25px rgba(229,9,20,0.3),inset 0 1px 0 rgba(255,255,255,0.1);transition:all .35s cubic-bezier(.22,.68,0,1.2)}
+        .btn-accent:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 12px 40px rgba(229,9,20,0.5),inset 0 1px 0 rgba(255,255,255,0.15)}
+        .btn-accent:active{transform:translateY(-1px) scale(0.98)}
+        .btn-glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.08);transition:all .35s ease}
+        .btn-glass:hover{background:rgba(255,255,255,0.1);transform:translateY(-3px);border-color:rgba(255,255,255,0.15)}
+        .badge-live{background:#e50914;animation:livePulse 2s ease-in-out infinite}
+        @keyframes livePulse{0%,100%{box-shadow:0 0 0 0 rgba(229,9,20,0.6)}50%{box-shadow:0 0 0 8px rgba(229,9,20,0)}}
+        .feat-card{background:linear-gradient(160deg,rgba(15,15,24,0.9),rgba(22,22,37,0.5));border:1px solid rgba(255,255,255,0.03);transition:all .5s cubic-bezier(.22,.68,0,1.2);position:relative;overflow:hidden}
+        .feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent)}
+        .feat-card:hover{border-color:rgba(229,9,20,0.15);transform:translateY(-8px);box-shadow:0 25px 60px rgba(0,0,0,0.5),0 0 50px rgba(229,9,20,0.04)}
+        .plan-card{background:linear-gradient(160deg,rgba(15,15,24,0.95),rgba(22,22,37,0.6));border:1px solid rgba(255,255,255,0.04);transition:all .5s cubic-bezier(.22,.68,0,1.2);position:relative;overflow:hidden}
+        .plan-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent)}
+        .plan-card:hover{transform:translateY(-10px);box-shadow:0 30px 70px rgba(0,0,0,0.5)}
+        .plan-hot{border-color:rgba(229,9,20,0.4);box-shadow:0 0 60px rgba(229,9,20,0.08),inset 0 1px 0 rgba(229,9,20,0.15)}
+        .plan-hot::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(229,9,20,0.03) 0%,transparent 40%);pointer-events:none}
+        .top10-num{font-size:8rem;font-weight:900;line-height:.85;-webkit-text-stroke:3px rgba(229,9,20,0.3);color:transparent;font-family:'Space Grotesk',sans-serif;filter:drop-shadow(0 0 20px rgba(229,9,20,0.1))}
+        .nav-solid{background:rgba(5,5,8,0.92);backdrop-filter:blur(40px) saturate(1.8);-webkit-backdrop-filter:blur(40px) saturate(1.8);box-shadow:0 1px 40px rgba(0,0,0,0.6),inset 0 -1px 0 rgba(255,255,255,0.03)}
+        .progress-fill{background:linear-gradient(90deg,#e50914,#f5c518);position:relative;overflow:hidden}
+        .progress-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);animation:progressShine 2s ease-in-out infinite}
+        @keyframes progressShine{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+        .genre-card{position:relative;overflow:hidden;transition:all .4s cubic-bezier(.22,.68,0,1.2)}
+        .genre-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--gc1),var(--gc2));opacity:.12;transition:opacity .4s}
+        .genre-card:hover::before{opacity:.25}
+        .genre-card:hover{transform:translateY(-4px) scale(1.03);border-color:rgba(255,255,255,0.12)}
+        .genre-card.active-genre{border-color:rgba(229,9,20,0.5);box-shadow:0 0 25px rgba(229,9,20,0.1)}
+        .genre-card.active-genre::before{opacity:.3}
+        .testi-card{background:linear-gradient(160deg,rgba(15,15,24,0.8),rgba(22,22,37,0.4));border:1px solid rgba(255,255,255,0.03);transition:all .4s ease;position:relative}
+        .testi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent)}
+        .testi-card:hover{border-color:rgba(229,9,20,0.15);transform:translateY(-5px)}
+        .faq-content{max-height:0;overflow:hidden;transition:max-height .5s cubic-bezier(.22,.68,0,1.2)}
+        .faq-content.open{max-height:200px}
+        .faq-icon{transition:transform .4s cubic-bezier(.22,.68,0,1.2)}
+        .faq-icon.rotated{transform:rotate(45deg)}
+        .toggle-track{width:56px;height:30px;border-radius:99px;background:rgba(255,255,255,0.08);transition:all .4s;cursor:pointer;position:relative;border:1px solid rgba(255,255,255,0.06)}
+        .toggle-track.active{background:#e50914;border-color:rgba(229,9,20,0.3);box-shadow:0 0 20px rgba(229,9,20,0.2)}
+        .toggle-thumb{width:24px;height:24px;border-radius:50%;background:white;position:absolute;top:2px;left:3px;transition:transform .4s cubic-bezier(.22,.68,0,1.2);box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+        .toggle-track.active .toggle-thumb{transform:translateX(26px)}
+        #backToTop{opacity:0;visibility:hidden;transition:all .4s cubic-bezier(.22,.68,0,1.2);transform:translateY(20px)}
+        #backToTop.visible{opacity:1;visibility:visible;transform:translateY(0)}
+        #backToTop:hover{transform:translateY(-3px) scale(1.1)}
+        .wa-float{position:fixed;bottom:28px;left:28px;z-index:90;transition:all .4s cubic-bezier(.22,.68,0,1.2)}
+        .wa-float:hover{transform:scale(1.15)}
+        .wa-float .wa-pulse{position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(37,211,102,0.4);animation:waPulse 2s ease-in-out infinite}
+        @keyframes waPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:0}}
+        .mobile-panel{transform:translateX(100%);transition:transform .5s cubic-bezier(.22,.68,0,1.2)}
+        .mobile-panel.open{transform:translateX(0)}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes slideRight{from{opacity:0;transform:translateX(80px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+        @keyframes float2{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-10px) rotate(3deg)}}
+        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        @keyframes borderGlow{0%,100%{border-color:rgba(229,9,20,0.15)}50%{border-color:rgba(229,9,20,0.5)}}
+        @keyframes morphBlob{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%}50%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%}}
+        .anim-fadeUp{animation:fadeUp .9s cubic-bezier(.22,.68,0,1.2) both}
+        .anim-fadeIn{animation:fadeIn .7s ease both}
+        .anim-slideRight{animation:slideRight .9s cubic-bezier(.22,.68,0,1.2) both}
+        .anim-float{animation:float 5s ease-in-out infinite}
+        .anim-float2{animation:float2 6s ease-in-out infinite}
+        .anim-borderGlow{animation:borderGlow 2.5s ease-in-out infinite}
+        .anim-morph{animation:morphBlob 8s ease-in-out infinite}
+        .reveal{opacity:0;transform:translateY(35px);transition:all .8s cubic-bezier(.22,.68,0,1.2)}
+        .reveal.visible{opacity:1;transform:translateY(0)}
+        .reveal-delay-1{transition-delay:.1s}
+        .reveal-delay-2{transition-delay:.2s}
+        .reveal-delay-3{transition-delay:.3s}
+        .reveal-delay-4{transition-delay:.4s}
+        .reveal-delay-5{transition-delay:.5s}
+        .star-fill{color:#f5c518}
+        .counter-num{font-variant-numeric:tabular-nums}
+        @media(max-width:768px){.top10-num{font-size:4rem;-webkit-text-stroke-width:2px}.wa-float{bottom:20px;left:20px}#backToTop{bottom:20px;right:20px}}
+    </style>
+</head>
+<body>
+
+<div id="cursorGlow"></div>
+
+<div id="loader">
+    <div class="loader-cinematic mb-6">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="loader-play"><span class="iconify" data-icon="mdi:play"></span></div>
+    </div>
+    <p class="text-h-sub text-xs tracking-[.35em] uppercase font-medium">Hamo Stream</p>
+    <div class="mt-3 w-32 h-0.5 bg-white/5 rounded-full overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-h-accent to-h-purple rounded-full" style="animation:shimmer 1.5s ease-in-out infinite;background-size:200% auto"></div>
+    </div>
+</div>
+
+<canvas id="particles"></canvas>
+
+<div id="toastBox" class="fixed top-24 right-6 z-[200] flex flex-col gap-3"></div>
+
+<div class="announce-bar fixed top-0 inset-x-0 z-[101] text-center py-2 px-4">
+    <p class="text-[11px] font-semibold text-white tracking-wide flex items-center justify-center gap-2">
+        <span class="iconify text-sm" data-icon="mdi:fire"></span>
+        NEW: 4K Dolby Vision now available on all Pro & VIP plans
+        <span class="hidden sm:inline">—</span>
+        <a href="#pricing" class="hidden sm:inline underline underline-offset-2 hover:no-underline font-bold">Upgrade Now →</a>
+    </p>
+</div>
+
+<nav id="nav" class="fixed top-[34px] inset-x-0 z-[100] transition-all duration-500">
+    <div class="max-w-[1480px] mx-auto px-4 lg:px-8">
+        <div class="flex items-center justify-between h-[68px]">
+            <a href="#" class="flex items-center gap-3 group">
+                <div class="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-h-accent to-red-900 flex items-center justify-center shadow-lg shadow-red-900/20 group-hover:shadow-red-900/40 transition-all duration-500 group-hover:rotate-3">
+                    <span class="iconify text-white text-xl" data-icon="mdi:play"></span>
+                    <div class="absolute -inset-1 bg-h-accent/15 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                </div>
+                <div class="hidden sm:block">
+                    <span class="text-[17px] font-bold text-white tracking-tight">Hamo<span class="text-h-accent">Stream</span></span>
+                    <p class="text-[9px] text-h-muted tracking-[.25em] uppercase -mt-0.5">Streaming Hub</p>
+                </div>
+            </a>
+            <div class="hidden xl:flex items-center gap-0.5">
+                <a href="#home" class="nav-link px-4 py-2 rounded-xl text-[13px] font-medium text-white bg-white/[0.04]">Home</a>
+                <a href="#movies" class="nav-link px-4 py-2 rounded-xl text-[13px] font-medium text-h-sub hover:text-white hover:bg-white/[0.04] transition-all duration-300">Movies</a>
+                <a href="#series" class="nav-link px-4 py-2 rounded-xl text-[13px] font-medium text-h-sub hover:text-white hover:bg-white/[0.04] transition-all duration-300">Series</a>
+                <a href="#top10" class="nav-link px-4 py-2 rounded-xl text-[13px] font-medium text-h-sub hover:text-white hover:bg-white/[0.04] transition-all duration-300">Top 10</a>
+                <a href="#live" class="nav-link px-4 py-2 rounded-xl text-[13px] font-medium text-h-sub hover:text-white hover:bg-white/[0.04] transition-all duration-300 flex items-center gap-1.5">Live TV <span class="w-1.5 h-1.5 bg-h-accent rounded-full animate-pulse"></span></a>
+                <a href="#books" class="nav-link px-4 py-2 rounded-xl text-[13px] font-medium text-h-sub hover:text-white hover:bg-white/[0.04] transition-all duration-300">Books</a>
+                <a href="#pricing" class="nav-link px-4 py-2 rounded-xl text-[13px] font-medium text-h-sub hover:text-white hover:bg-white/[0.04] transition-all duration-300">Pricing</a>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleSearch()" class="w-10 h-10 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] flex items-center justify-center transition-all duration-300 border border-transparent hover:border-white/[0.06]"><span class="iconify text-h-text text-[17px]" data-icon="mdi:magnify"></span></button>
+                <button onclick="toast('No new notifications','info')" class="w-10 h-10 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] flex items-center justify-center transition-all duration-300 border border-transparent hover:border-white/[0.06] relative"><span class="iconify text-h-text text-[17px]" data-icon="mdi:bell-outline"></span><span class="absolute top-1.5 right-1.5 w-2 h-2 bg-h-accent rounded-full ring-2 ring-h-bg"></span></button>
+                <button onclick="openModal('authModal')" class="hidden md:flex btn-accent px-5 py-2.5 rounded-xl text-[12px] font-bold text-white items-center gap-2 tracking-wide uppercase"><span class="iconify text-sm" data-icon="mdi:account-circle-outline"></span>Sign In</button>
+                <button onclick="toggleMobile()" class="xl:hidden w-10 h-10 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] flex items-center justify-center transition-all duration-300 border border-transparent hover:border-white/[0.06]"><span id="menuBtn" class="iconify text-h-text text-xl" data-icon="mdi:menu"></span></button>
+            </div>
+        </div>
+    </div>
+    <div id="searchOverlay" class="hidden absolute inset-x-0 top-full border-t border-h-border glass-strong">
+        <div class="max-w-[1480px] mx-auto px-4 lg:px-8 py-6">
+            <div class="relative max-w-2xl mx-auto">
+                <span class="iconify absolute left-4 top-1/2 -translate-y-1/2 text-h-muted text-xl" data-icon="mdi:magnify"></span>
+                <input id="searchInput" type="text" placeholder="Search movies, series, channels, books..." class="w-full bg-white/[0.03] border border-white/[0.06] rounded-2xl py-4 pl-12 pr-12 text-white placeholder-h-muted/50 text-sm focus:outline-none focus:border-h-accent/30 focus:bg-white/[0.05] transition-all duration-300">
+                <kbd class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-h-muted bg-white/5 px-2.5 py-1 rounded-lg border border-white/[0.06]">ESC</kbd>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div id="mobileOverlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[110] hidden" onclick="toggleMobile()"></div>
+<div id="mobilePanel" class="mobile-panel fixed top-0 right-0 bottom-0 w-[300px] z-[120] glass-strong border-l border-h-border">
+    <div class="flex items-center justify-between p-6 border-b border-h-border">
+        <span class="text-white font-bold">Menu</span>
+        <button onclick="toggleMobile()" class="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"><span class="iconify text-white" data-icon="mdi:close"></span></button>
+    </div>
+    <div class="p-6 space-y-1">
+        <a href="#home" onclick="toggleMobile()" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-white bg-white/[0.04]"><span class="iconify text-h-accent" data-icon="mdi:home"></span>Home</a>
+        <a href="#movies" onclick="toggleMobile()" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-h-sub hover:text-white hover:bg-white/[0.04] transition-colors"><span class="iconify" data-icon="mdi:movie-open"></span>Movies</a>
+        <a href="#series" onclick="toggleMobile()" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-h-sub hover:text-white hover:bg-white/[0.04] transition-colors"><span class="iconify" data-icon="mdi:television-classic"></span>Series</a>
+        <a href="#top10" onclick="toggleMobile()" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-h-sub hover:text-white hover:bg-white/[0.04] transition-colors"><span class="iconify" data-icon="mdi:trophy"></span>Top 10</a>
+        <a href="#live" onclick="toggleMobile()" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-h-sub hover:text-white hover:bg-white/[0.04] transition-colors"><span class="iconify" data-icon="mdi:broadcast"></span>Live TV</a>
+        <a href="#books" onclick="toggleMobile()" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-h-sub hover:text-white hover:bg-white/[0.04] transition-colors"><span class="iconify" data-icon="mdi:book-open-variant"></span>Books</a>
+        <a href="#pricing" onclick="toggleMobile()" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-h-sub hover:text-white hover:bg-white/[0.04] transition-colors"><span class="iconify" data-icon="mdi:tag"></span>Pricing</a>
+    </div>
+    <div class="absolute bottom-0 inset-x-0 p-6 border-t border-h-border">
+        <button onclick="openModal('authModal');toggleMobile()" class="w-full btn-accent py-3 rounded-xl text-sm font-bold text-white">Sign In</button>
+    </div>
+</div>
+
+<!-- HERO -->
+<section id="home" class="relative min-h-screen hero-bg overflow-hidden">
+    <div class="absolute inset-0">
+        <img src="https://picsum.photos/seed/hamo-hero-cinematic/1920/1080.jpg" alt="" class="w-full h-full object-cover opacity-20 scale-110" style="animation:float2 20s ease-in-out infinite">
+        <div class="hero-vignette absolute inset-0"></div>
+    </div>
+    <div class="float-shape w-96 h-96 bg-h-accent top-20 right-[10%] anim-morph" style="animation-delay:-2s"></div>
+    <div class="float-shape w-72 h-72 bg-h-purple bottom-32 left-[5%] anim-morph" style="animation-delay:-5s"></div>
+    <div class="float-shape w-48 h-48 bg-h-cyan top-[40%] right-[30%] anim-morph" style="animation-delay:-3s;opacity:.04"></div>
+    <div class="absolute top-40 right-[12%] w-80 h-80 bg-h-accent/8 rounded-full blur-[130px] pointer-events-none"></div>
+    <div class="absolute bottom-24 left-[8%] w-64 h-64 bg-h-purple/6 rounded-full blur-[110px] pointer-events-none"></div>
+    <div class="relative z-10 max-w-[1480px] mx-auto px-4 lg:px-8 min-h-screen flex items-center">
+        <div class="grid lg:grid-cols-5 gap-12 items-center w-full pt-28 pb-20">
+            <div class="lg:col-span-3 space-y-8">
+                <div class="anim-fadeUp" style="animation-delay:.15s">
+                    <div class="inline-flex items-center gap-2.5 bg-h-accent/[0.06] border border-h-accent/15 rounded-full px-5 py-2.5 mb-7">
+                        <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-h-accent opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-h-accent"></span></span>
+                        <span class="text-h-accent text-[11px] font-bold tracking-widest uppercase">Now Streaming — 2024 Releases</span>
+                    </div>
+                    <h1 class="text-[clamp(2.8rem,6.5vw,5.5rem)] font-black text-white leading-[1.02] tracking-tight font-display">Everything You<br><span class="grad-text">Love to Watch</span><br>In One Place</h1>
+                </div>
+                <p class="text-lg text-h-sub leading-relaxed max-w-xl anim-fadeUp" style="animation-delay:.3s">10,000+ titles. 500+ live channels. Books & stories. 4K Dolby Vision quality. Zero interruptions. The ultimate streaming experience crafted for you.</p>
+                <div class="flex flex-wrap gap-4 anim-fadeUp" style="animation-delay:.45s">
+                    <button onclick="openModal('authModal')" class="btn-accent px-9 py-4 rounded-2xl text-[15px] font-bold text-white flex items-center gap-3 anim-borderGlow border border-transparent"><span class="iconify text-2xl" data-icon="mdi:play-circle"></span>Start Watching Free</button>
+                    <button onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})" class="btn-glass px-9 py-4 rounded-2xl text-[15px] font-semibold text-white flex items-center gap-3"><span class="iconify text-xl" data-icon="mdi:crown-outline"></span>View Plans</button>
+                </div>
+                <div class="flex flex-wrap items-center gap-x-10 gap-y-5 pt-4 anim-fadeUp" style="animation-delay:.6s">
+                    <div class="flex items-center gap-3">
+                        <div class="flex -space-x-2.5">
+                            <img src="https://picsum.photos/seed/uf1/64/64.jpg" class="w-9 h-9 rounded-full ring-2 ring-h-bg object-cover">
+                            <img src="https://picsum.photos/seed/uf2/64/64.jpg" class="w-9 h-9 rounded-full ring-2 ring-h-bg object-cover">
+                            <img src="https://picsum.photos/seed/uf3/64/64.jpg" class="w-9 h-9 rounded-full ring-2 ring-h-bg object-cover">
+                            <div class="w-9 h-9 rounded-full ring-2 ring-h-bg bg-h-elevated flex items-center justify-center text-[10px] font-bold text-h-sub">+2M</div>
+                        </div>
+                        <div><p class="text-white font-bold text-sm counter-num" data-target="2000000" data-suffix="+">0</p><p class="text-h-muted text-[10px]">Active Users</p></div>
+                    </div>
+                    <div class="h-9 w-px bg-h-border hidden sm:block"></div>
+                    <div><p class="text-white font-bold text-sm">4.9 <span class="star-fill">★★★★★</span></p><p class="text-h-muted text-[10px]">App Store Rating</p></div>
+                    <div class="h-9 w-px bg-h-border hidden sm:block"></div>
+                    <div><p class="text-white font-bold text-sm counter-num" data-target="10000" data-suffix="+">0</p><p class="text-h-muted text-[10px]">Titles Available</p></div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 hidden lg:block anim-slideRight" style="animation-delay:.35s">
+                <div class="relative cursor-pointer group" onclick="toast('Opening player...','success')">
+                    <div class="relative rounded-3xl overflow-hidden shadow-2xl shadow-black/60">
+                        <img src="https://picsum.photos/seed/hamo-feat-epic/600/880.jpg" alt="" class="w-full h-[540px] object-cover card-img">
+                        <div class="card-overlay-fx absolute inset-0"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-20 h-20 rounded-full bg-h-accent/20 backdrop-blur-md border border-h-accent/30 flex items-center justify-center group-hover:scale-110 group-hover:bg-h-accent/40 transition-all duration-500">
+                                <div class="w-12 h-12 rounded-full bg-h-accent flex items-center justify-center shadow-xl shadow-h-accent/40 ml-1"><span class="iconify text-white text-2xl" data-icon="mdi:play"></span></div>
+                            </div>
+                        </div>
+                        <div class="absolute bottom-0 inset-x-0 p-7">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="badge-live px-2.5 py-0.5 rounded-md text-[10px] font-bold text-white uppercase tracking-wider">Featured</span>
+                                <span class="bg-h-gold/20 text-h-gold px-2.5 py-0.5 rounded-md text-[10px] font-bold">IMDb 9.1</span>
+                                <span class="bg-white/10 text-white px-2.5 py-0.5 rounded-md text-[10px] font-medium backdrop-blur-sm">4K DV</span>
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-1">The Last Kingdom</h3>
+                            <p class="text-h-sub text-[13px] mb-5">Action · Drama · Thriller · 2024 · 2h 18m</p>
+                            <div class="card-actions flex items-center gap-2.5">
+                                <div class="w-11 h-11 rounded-full bg-h-accent flex items-center justify-center shadow-lg shadow-h-accent/30 hover:scale-110 transition-transform"><span class="iconify text-white text-xl" data-icon="mdi:play"></span></div>
+                                <div class="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors"><span class="iconify text-white text-lg" data-icon="mdi:plus"></span></div>
+                                <div class="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors"><span class="iconify text-white text-lg" data-icon="mdi:thumb-up-outline"></span></div>
+                                <div class="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center ml-auto hover:bg-white/20 transition-colors"><span class="iconify text-white text-lg" data-icon="mdi:share-variant-outline"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-glow rounded-3xl"></div>
+                </div>
+                <div class="absolute -left-16 top-16 glass rounded-2xl p-3 anim-float hidden xl:flex items-center gap-3" style="animation-delay:-1s">
+                    <div class="w-10 h-10 rounded-lg overflow-hidden"><img src="https://picsum.photos/seed/mini-1/80/80.jpg" class="w-full h-full object-cover"></div>
+                    <div><p class="text-[11px] font-semibold text-white">Trending Now</p><p class="text-[9px] text-h-muted">1.2M watching</p></div>
+                </div>
+                <div class="absolute -right-12 bottom-32 glass rounded-2xl p-3 anim-float2 hidden xl:flex items-center gap-3" style="animation-delay:-3s">
+                    <div class="w-8 h-8 rounded-lg bg-h-green/20 flex items-center justify-center"><span class="iconify text-h-green text-sm" data-icon="mdi:check-decagram"></span></div>
+                    <div><p class="text-[11px] font-semibold text-white">4K Quality</p><p class="text-[9px] text-h-muted">Dolby Vision</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 anim-float">
+        <div class="w-7 h-11 rounded-full border-2 border-white/10 flex items-start justify-center p-1.5"><div class="w-1 h-2.5 bg-white/25 rounded-full animate-bounce"></div></div>
+    </div>
+</section>
+
+<!-- CONTINUE WATCHING -->
+<section class="py-16">
+    <div class="max-w-[1480px] mx-auto px-4 lg:px-8 reveal">
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="text-xl font-bold text-white flex items-center gap-2.5"><span class="w-8 h-8 rounded-lg bg-h-accent/10 flex items-center justify-center"><span class="iconify text-h-accent text-lg" data-icon="mdi:history"></span></span>Continue Watching</h2>
+            <a href="#" class="text-h-sub text-[13px] hover:text-white transition-colors flex items-center gap-1 group">See All <span class="iconify text-sm group-hover:translate-x-0.5 transition-transform" data-icon="mdi:chevron-right"></span></a>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div class="content-card cursor-pointer" onclick="toast('Resuming playback...','success')"><div class="relative rounded-2xl overflow-hidden"><img src="https://picsum.photos/seed/cw-1x/400/225.jpg" alt="" class="w-full aspect-video object-cover card-img"><div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity"><div class="w-10 h-10 rounded-full bg-h-accent/90 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white" data-icon="mdi:play"></span></div></div><div class="absolute bottom-0 inset-x-0 h-1 bg-white/10"><div class="progress-fill h-full rounded-r" style="width:72%"></div></div></div><p class="text-[13px] font-medium text-white mt-2.5 truncate">Dark Horizons</p><p class="text-[11px] text-h-muted">S2 E5 · 28 min left</p></div>
+            <div class="content-card cursor-pointer" onclick="toast('Resuming playback...','success')"><div class="relative rounded-2xl overflow-hidden"><img src="https://picsum.photos/seed/cw-2x/400/225.jpg" alt="" class="w-full aspect-video object-cover card-img"><div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity"><div class="w-10 h-10 rounded-full bg-h-accent/90 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white" data-icon="mdi:play"></span></div></div><div class="absolute bottom-0 inset-x-0 h-1 bg-white/10"><div class="progress-fill h-full rounded-r" style="width:45%"></div></div></div><p class="text-[13px] font-medium text-white mt-2.5 truncate">The Grand Budapest</p><p class="text-[11px] text-h-muted">1h 12min left</p></div>
+            <div class="content-card cursor-pointer" onclick="toast('Resuming playback...','success')"><div class="relative rounded-2xl overflow-hidden"><img src="https://picsum.photos/seed/cw-3x/400/225.jpg" alt="" class="w-full aspect-video object-cover card-img"><div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity"><div class="w-10 h-10 rounded-full bg-h-accent/90 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white" data-icon="mdi:play"></span></div></div><div class="absolute bottom-0 inset-x-0 h-1 bg-white/10"><div class="progress-fill h-full rounded-r" style="width:88%"></div></div></div><p class="text-[13px] font-medium text-white mt-2.5 truncate">Neon Streets</p><p class="text-[11px] text-h-muted">S1 E12 · 8 min left</p></div>
+            <div class="content-card cursor-pointer hidden sm:block" onclick="toast('Resuming playback...','success')"><div class="relative rounded-2xl overflow-hidden"><img src="https://picsum.photos/seed/cw-4x/400/225.jpg" alt="" class="w-full aspect-video object-cover card-img"><div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity"><div class="w-10 h-10 rounded-full bg-h-accent/90 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white" data-icon="mdi:play"></span></div></div><div class="absolute bottom-0 inset-x-0 h-1 bg-white/10"><div class="progress-fill h-full rounded-r" style="width:30%"></div></div></div><p class="text-[13px] font-medium text-white mt-2.5 truncate">Ocean's Silence</p><p class="text-[11px] text-h-muted">1h 45min left</p></div>
+            <div class="content-card cursor-pointer hidden md:block" onclick="toast('Resuming playback...','success')"><div class="relative rounded-2xl overflow-hidden"><img src="https://picsum.photos/seed/cw-5x/400/225.jpg" alt="" class="w-full aspect-video object-cover card-img"><div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity"><div class="w-10 h-10 rounded-full bg-h-accent/90 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white" data-icon="mdi:play"></span></div></div><div class="absolute bottom-0 inset-x-0 h-1 bg-white/10"><div class="progress-fill h-full rounded-r" style="width:55%"></div></div></div><p class="text-[13px] font-medium text-white mt-2.5 truncate">Arctic Edge</p><p class="text-[11px] text-h-muted">S3 E2 · 35 min left</p></div>
+            <div class="content-card cursor-pointer hidden lg:block" onclick="toast('Resuming playback...','success')"><div class="relative rounded-2xl overflow-hidden"><img src="https://picsum.photos/seed/cw-6x/400/225.jpg" alt="" class="w-full aspect-video object-cover card-img"><div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity"><div class="w-10 h-10 rounded-full bg-h-accent/90 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white" data-icon="mdi:play"></span></div></div><div class="absolute bottom-0 inset-x-0 h-1 bg-white/10"><div class="progress-fill h-full rounded-r" style="width:15%"></div></div></div><p class="text-[13px] font-medium text-white mt-2.5 truncate">Midnight Sun</p><p class="text-[11px] text-h-muted">2h 5min left</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- TRENDING MOVIES -->
+<section id="movies" class="py-16">
+    <div class="max-w-[1480px] mx-auto px-4 lg:px-8">
+        <div class="reveal"><div class="flex items-center justify-between mb-8"><h2 class="text-xl font-bold text-white flex items-center gap-2.5"><span class="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center"><span class="iconify text-h-orange text-lg" data-icon="mdi:fire"></span></span>Trending Movies</h2><a href="#" class="text-h-sub text-[13px] hover:text-white transition-colors flex items-center gap-1 group">See All <span class="iconify text-sm group-hover:translate-x-0.5 transition-transform" data-icon="mdi:chevron-right"></span></a></div></div>
+        <div class="reveal reveal-delay-1 flex gap-3 mb-8 overflow-x-auto scroll-row pb-2">
+            <button onclick="setGenre(this)" class="genre-card active-genre flex-shrink-0 flex items-center gap-2.5 px-5 py-3 rounded-2xl border border-white/[0.06] text-[12px] font-semibold text-white bg-white/[0.02]" style="--gc1:rgba(229,9,20,0.2);--gc2:rgba(229,9,20,0.05)"><span class="iconify text-base" data-icon="mdi:view-grid"></span>All</button>
+            <button onclick="setGenre(this)" class="genre-card flex-shrink-0 flex items-center gap-2.5 px-5 py-3 rounded-2xl border border-white/[0.06] text-[12px] font-medium text-h-sub bg-white/[0.01]" style="--gc1:rgba(239,68,68,0.2);--gc2:rgba(239,68,68,0.05)"><span class="iconify text-base" data-icon="mdi:sword-cross"></span>Action</button>
+            <button onclick="setGenre(this)" class="genre-card flex-shrink-0 flex items-center gap-2.5 px-5 py-3 rounded-2xl border border-white/[0.06] text-[12px] font-medium text-h-sub bg-white/[0.01]" style="--gc1:rgba(99,102,241,0.2);--gc2:rgba(99,102,241,0.05)"><span class="iconify text-base" data-icon="mdi:drama-masks"></span>Drama</button>
+            <button onclick="setGenre(this)" class="genre-card flex-shrink-0 flex items-center gap-2.5 px-5 py-3 rounded-2xl border border-white/[0.06] text-[12px] font-medium text-h-sub bg-white/[0.01]" style="--gc1:rgba(34,197,94,0.2);--gc2:rgba(34,197,94,0.05)"><span class="iconify text-base" data-icon="mdi:emoticon-happy-outline"></span>Comedy</button>
+            <button onclick="setGenre(this)" class="genre-card flex-shrink-0 flex items-center gap-2.5 px-5 py-3 rounded-2xl border border-white/[0.06] text-[12px] font-medium text-h-sub bg-white/[0.01]" style="--gc1:rgba(139,92,246,0.2);--gc2:rgba(139,92,246,0.05)"><span class="iconify text-base" data-icon="mdi:ghost-outline"></span>Horror</button>
+            <button onclick="setGenre(this)" class="genre-card flex-shrink-0 flex items-center gap-2.5 px-5 py-3 rounded-2xl border border-white/[0.06] text-[12px] font-medium text-h-sub bg-white/[0.01]" style="--gc1:rgba(6,182,212,0.2);--gc2:rgba(6,182,212,0.05)"><span class="iconify text-base" data-icon="mdi:rocket-launch"></span>Sci-Fi</button>
+            <button onclick="setGenre(this)" class="genre-card flex-shrink-0 flex items-center gap-2.5 px-5 py-3 rounded-2xl border border-white/[0.06] text-[12px] font-medium text-h-sub bg-white/[0.01]" style="--gc1:rgba(236,72,153,0.2);--gc2:rgba(236,72,153,0.05)"><span class="iconify text-base" data-icon="mdi:heart-outline"></span>Romance</button>
+            <button onclick="setGenre(this)" class="genre-card flex-shrink-0 flex items-center gap-2.5 px-5 py-3 rounded-2xl border border-white/[0.06] text-[12px] font-medium text-h-sub bg-white/[0.01]" style="--gc1:rgba(249,115,22,0.2);--gc2:rgba(249,115,22,0.05)"><span class="iconify text-base" data-icon="mdi:cat"></span>Anime</button>
+        </div>
+        <div class="reveal reveal-delay-2 relative group/sr">
+            <button onclick="scrollR('trendRow',-1)" class="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full glass-strong flex items-center justify-center opacity-0 group-hover/sr:opacity-100 transition-all duration-300 hover:!bg-h-accent/90 hover:scale-110"><span class="iconify text-white text-xl" data-icon="mdi:chevron-right"></span></button>
+            <button onclick="scrollR('trendRow',1)" class="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full glass-strong flex items-center justify-center opacity-0 group-hover/sr:opacity-100 transition-all duration-300 hover:!bg-h-accent/90 hover:scale-110"><span class="iconify text-white text-xl" data-icon="mdi:chevron-left"></span></button>
+            <div id="trendRow" class="flex gap-5 overflow-x-auto scroll-row px-1">
+                <div class="flex-shrink-0 w-[175px] content-card cursor-pointer" onclick="toast('Loading...','success')"><div class="relative rounded-2xl overflow-hidden card-glow" style="border-radius:1rem"><img src="https://picsum.photos/seed/tm-1n/400/600.jpg" alt="" class="w-full h-[260px] object-cover card-img"><div class="card-overlay-fx absolute inset-0"></div><div class="absolute top-3 left-3 bg-gradient-to-r from-h-accent to-red-700 px-2.5 py-0.5 rounded-lg text-[10px] font-bold text-white shadow-lg">4K DV</div><div class="card-actions absolute bottom-3 left-3 right-3 flex gap-2"><div class="w-9 h-9 rounded-full bg-h-accent/90 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white text-sm" data-icon="mdi:play"></span></div><div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white text-sm" data-icon="mdi:plus"></span></div></div></div><div class="mt-3 px-0.5"><h4 class="text-[13px] font-semibold text-white truncate">Phantom Protocol</h4><p class="text-[11px] text-h-muted mt-0.5">Action · 2024</p><p class="text-[11px] star-fill mt-1">★★★★★ <span class="text-h-muted font-medium">8.7</span></p></div></div>
+                <div class="flex-shrink-0 w-[175px] content-card cursor-pointer" onclick="toast('Loading...','success')"><div class="relative rounded-2xl overflow-hidden card-glow" style="border-radius:1rem"><img src="https://picsum.photos/seed/tm-2n/400/600.jpg" alt="" class="w-full h-[260px] object-cover card-img"><div class="card-overlay-fx absolute inset-0"></div><div class="absolute top-3 left-3 bg-gradient-to-r from-h-purple to-purple-800 px-2.5 py-0.5 rounded-lg text-[10px] font-bold text-white shadow-lg">NEW</div><div class="card-actions absolute bottom-3 left-3 right-3 flex gap-2"><div class="w-9 h-9 rounded-full bg-h-accent/90 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white text-sm" data-icon="mdi:play"></span></div><div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white text-sm" data-icon="mdi:plus"></span></div></div></div><div class="mt-3 px-0.5"><h4 class="text-[13px] font-semibold text-white truncate">Eternal Garden</h4><p class="text-[11px] text-h-muted mt-0.5">Drama · 2024</p><p class="text-[11px] star-fill mt-1">★★★★☆ <span class="text-h-muted font-medium">7.9</span></p></div></div>
+                <div class="flex-shrink-0 w-[175px] content-card cursor-pointer" onclick="toast('Loading...','success')"><div class="relative rounded-2xl overflow-hidden card-glow" style="border-radius:1rem"><img src="https://picsum.photos/seed/tm-3n/400/600.jpg" alt="" class="w-full h-[260px] object-cover card-img"><div class="card-overlay-fx absolute inset-0"></div><div class="card-actions absolute bottom-3 left-3 right-3 flex gap-2"><div class="w-9 h-9 rounded-full bg-h-accent/90 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white text-sm" data-icon="mdi:play"></span></div><div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white text-sm" data-icon="mdi:plus"></span></div></div></div><div class="mt-3 px-0.5"><h4 class="text-[13px] font-semibold text-white truncate">Crimson Tide II</h4><p class="text-[11px] text-h-muted mt-0.5">Thriller · 2024</p><p class="text-[11px] star-fill mt-1">★★★★★ <span class="text-h-muted font-medium">9.0</span></p></div></div>
+                <div class="flex-shrink-0 w-[175px] content-card cursor-pointer" onclick="toast('Loading...','success')"><div class="relative rounded-2xl overflow-hidden card-glow" style="border-radius:1rem"><img src="https://picsum.photos/seed/tm-4n/400/600.jpg" alt="" class="w-full h-[260px] object-cover card-img"><div class="card-overlay-fx absolute inset-0"></div><div class="absolute top-3 left-3 bg-gradient-to-r from-h-gold to-yellow-700 px-2.5 py-0.5 rounded-lg text-[10px] font-bold text-h-bg shadow-lg">#1 Trending</div><div class="card-actions absolute bottom-3 left-3 right-3 flex gap-2"><div class="w-9 h-9 rounded-full bg-h-accent/90 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white text-sm" data-icon="mdi:play"></span></div><div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white text-sm" data-icon="mdi:plus"></span></div></div></div><div class="mt-3 px-0.5"><h4 class="text-[13px] font-semibold text-white truncate">Galactic Drift</h4><p class="text-[11px] text-h-muted mt-0.5">Sci-Fi · 2024</p><p class="text-[11px] star-fill mt-1">★★★★★ <span class="text-h-muted font-medium">9.3</span></p></div></div>
+                <div class="flex-shrink-0 w-[175px] content-card cursor-pointer" onclick="toast('Loading...','success')"><div class="relative rounded-2xl overflow-hidden card-glow" style="border-radius:1rem"><img src="https://picsum.photos/seed/tm-5n/400/600.jpg" alt="" class="w-full h-[260px] object-cover card-img"><div class="card-overlay-fx absolute inset-0"></div><div class="card-actions absolute bottom-3 left-3 right-3 flex gap-2"><div class="w-9 h-9 rounded-full bg-h-accent/90 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white text-sm" data-icon="mdi:play"></span></div><div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white text-sm" data-icon="mdi:plus"></span></div></div></div><div class="mt-3 px-0.5"><h4 class="text-[13px] font-semibold text-white truncate">Whisper Falls</h4><p class="text-[11px] text-h-muted mt-0.5">Horror · 2024</p><p class="text-[11px] star-fill mt-1">★★★★☆ <span class="text-h-muted font-medium">7.5</span></p></div></div>
+                <div class="flex-shrink-0 w-[175px] content-card cursor-pointer" onclick="toast('Loading...','success')"><div class="relative rounded-2xl overflow-hidden card-glow" style="border-radius:1rem"><img src="https://picsum.photos/seed/tm-6n/400/600.jpg" alt="" class="w-full h-[260px] object-cover card-img"><div class="card-overlay-fx absolute inset-0"></div><div class="absolute top-3 left-3 bg-gradient-to-r from-h-cyan to-cyan-700 px-2.5 py-0.5 rounded-lg text-[10px] font-bold text-white shadow-lg">EXCLUSIVE</div><div class="card-actions absolute bottom-3 left-3 right-3 flex gap-2"><div class="w-9 h-9 rounded-full bg-h-accent/90 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white text-sm" data-icon="mdi:play"></span></div><div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white text-sm" data-icon="mdi:plus"></span></div></div></div><div class="mt-3 px-0.5"><h4 class="text-[13px] font-semibold text-white truncate">Lost in Tokyo</h4><p class="text-[11px] text-h-muted mt-0.5">Romance · 2024</p><p class="text-[11px] star-fill mt-1">★★★★☆ <span class="text-h-muted font-medium">8.2</span></p></div></div>
+                <div class="flex-shrink-0 w-[175px] content-card cursor-pointer" onclick="toast('Loading...','success')"><div class="relative rounded-2xl overflow-hidden card-glow" style="border-radius:1rem"><img src="https://picsum.photos/seed/tm-7n/400/600.jpg" alt="" class="w-full h-[260px] object-cover card-img"><div class="card-overlay-fx absolute inset-0"></div><div class="absolute top-3 left-3 bg-gradient-to-r from-h-pink to-pink-700 px-2.5 py-0.5 rounded-lg text-[10px] font-bold text-white shadow-lg">ANIME</div><div class="card-actions absolute bottom-3 left-3 right-3 flex gap-2"><div class="w-9 h-9 rounded-full bg-h-accent/90 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white text-sm" data-icon="mdi:play"></span></div><div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-sm"><span class="iconify text-white text-sm" data-icon="mdi:plus"></span></div></div></div><div class="mt-3 px-0.5"><h4 class="text-[13px] font-semibold text-white truncate">Blade Requiem</h4><p class="text-[11px] text-h-muted mt-0.5">Anime · 2024</p><p class="text-[11px] star-fill mt-1">★★★★★ <span class="text-h-muted font-medium">9.4</span></p></div></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TOP 10 -->
+<section id="top10" class="py-16 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-h-accent/[0.015] to-transparent pointer-events-none"></div>
+    <div class="max-w-[1480px] mx-auto px-4 lg:px-8 relative z-10 reveal">
+        <div class="flex items-center justify-between mb-8"><h2 class="text-xl font-bold text-white flex items-center gap-2.5"><span class="w-8 h-8 rounded-lg bg-h-gold/10 flex items-center justify-center"><span class="iconify text-h-gold text-lg" data-icon="mdi:trophy"></span></span>Top 10 Today</h2></div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
+            <div class="flex items-end gap-3 content-card cursor-pointer" onclick="toast('Loading...','success')"><span class="top10-num select-none">1</span><div class="flex-1 min-w-0"><div class="relative rounded-2xl overflow-hidden card-glow" style="border-radius:1rem"><img src="https://picsum.photos/seed/top-1z/400/560.jpg" alt="" class="w-full h-[190px] object-cover card-img"></div><p class="text-[13px] font-semibold text-white mt-2.5 truncate">Galactic Drift</p><p class="text-[11px] text-h-muted">Sci-Fi · <span class="star-fill">9.3</span></p></div></div>
+            <div class="flex items-end gap-3 content-card cursor-pointer" onclick="toast('Loading...','success')"><span class="top10-num select-none">2</span><div class="flex-1 min-w-0"><div class="relative rounded-2xl overflow-hidden card-glow" style="border-radius:1rem"><img src="https://picsum.photos/seed/top-2z/400/560.jpg" alt="" class="w-full h-[190px] object-cover card-img"></div><p class="text-[13px] font-semibold text-white mt-2.5 truncate">Crimson Tide II</p><p class="text-[11px] text-h-muted">Thriller · <span class="star-fill">9.0</span></p></div></div>
+            <div class="hidden md:flex items-end gap-3 content-card cursor-pointer" onclick="toast('Loading...','success')"><span class="top10-num select-none">3</span><div class="flex-1 min-w-0"><div class="relative rounded-2xl overflow-hidden card-glow" style="border-radius:1rem"><img src="https://picsum.photos/seed/top-3z/400/560.jpg" alt="" class="w-full h-[190px] object-cover card-img"></div><p class="text-[13px] font-semibold text-white mt-2.5 truncate">Blade Requiem</p><p class="text-[11px] text-h-muted">Anime · <span class="star-fill">9.4</span></p></div></div>
+            <div class="hidden lg:flex items-end gap-3 content-card cursor-pointer" onclick="toast('Loading...','success')"><span class="top10-num select-none">4</span><div class="flex-1 min-w-0"><div class="relative rounded-2xl overflow-hidden card-glow" style="border-radius:1rem"><img src="https://picsum.photos/seed/top-4z/400/560.jpg" alt="" class="w-full h-[190px] object-cover card-img"></div><p class="text-[13px] font-semibold text-white mt-2.5 truncate">Phantom Protocol</p><p class="text-[11px] text-h-muted">Action · <span class="star-fill">8.7</span></p></div></div>
+            <div class="hidden lg:flex items-end gap-3 content-card cursor-pointer" onclick="toast('Loading...','success')"><span class="top10-num select-none">5</span><div class="flex-1 min-w-0"><div class="relative rounded-2xl overflow-hidden card-glow" style="border-radius:1rem"><img src="https://picsum.photos/seed/top-5z/400/560.jpg" alt="" class="w-full h-[190px] object-cover card-img"></div><p class="text-[13px] font-semibold text-white mt-2.5 truncate">Lost in Tokyo</p><p class="text-[11px] text-h-muted">Romance · <span class="star-fill">8.2</span></p></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- SERIES -->
+<section id="series" class="py-16">
+    <div class="max-w-[1480px] mx-auto px-4 lg:px-8 reveal">
+        <div class="flex items-center justify-between mb-8"><h2 class="text-xl font-bold text-white flex items-center gap-2.5"><span class="w-8 h-8 rounded-lg bg-h-purple/10 flex items-center justify-center"><span class="iconify text-h-purple text-lg" data-icon="mdi:television-classic"></span></span>Binge-Worthy Series</h2><a href="#" class="text-h-sub text-[13px] hover:text-white transition-colors flex items-center gap-1 group">See All <span class="iconify text-sm group-hover:translate-x-0.5 transition-transform" data-icon="mdi:chevron-right"></span></a></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div class="glass rounded-2xl overflow-hidden content-card cursor-pointer" onclick="toast('Opening series...','success')"><div class="flex gap-4 p-5"><div class="flex-shrink-0 w-28 h-[155px] rounded-xl overflow-hidden shadow-xl shadow-black/30"><img src="https://picsum.photos/seed/ser-1z/280/400.jpg" alt="" class="w-full h-full object-cover card-img"></div><div class="flex-1 min-w-0 flex flex-col justify-between py-0.5"><div><div class="flex items-center gap-2 mb-2.5"><span class="bg-h-purple/15 text-h-purple px-2.5 py-0.5 rounded-lg text-[10px] font-bold border border-h-purple/10">S3 NEW</span><span class="text-[11px] star-fill font-medium">★ 9.1</span></div><h4 class="text-[15px] font-bold text-white">Shadow Realm</h4><p class="text-[12px] text-h-muted mt-1.5 line-clamp-2 leading-relaxed">A dark fantasy epic where ancient gods return to reclaim their thrones...</p></div><div class="flex items-center gap-3 text-[11px] text-h-muted"><span>10 Episodes</span><span class="text-h-border">·</span><span>Fantasy</span><span class="text-h-border">·</span><span>2024</span></div></div></div></div>
+            <div class="glass rounded-2xl overflow-hidden content-card cursor-pointer" onclick="toast('Opening series...','success')"><div class="flex gap-4 p-5"><div class="flex-shrink-0 w-28 h-[155px] rounded-xl overflow-hidden shadow-xl shadow-black/30"><img src="https://picsum.photos/seed/ser-2z/280/400.jpg" alt="" class="w-full h-full object-cover card-img"></div><div class="flex-1 min-w-0 flex flex-col justify-between py-0.5"><div><div class="flex items-center gap-2 mb-2.5"><span class="bg-h-accent/15 text-h-accent px-2.5 py-0.5 rounded-lg text-[10px] font-bold border border-h-accent/10">TRENDING</span><span class="text-[11px] star-fill font-medium">★ 8.8</span></div><h4 class="text-[15px] font-bold text-white">Code Black</h4><p class="text-[12px] text-h-muted mt-1.5 line-clamp-2 leading-relaxed">Hackers uncover a conspiracy that threatens the entire digital world...</p></div><div class="flex items-center gap-3 text-[11px] text-h-muted"><span>8 Episodes</span><span class="text-h-border">·</span><span>Thriller</span><span class="text-h-border">·</span><span>2024</span></div></div></div></div>
+            <div class="glass rounded-2xl overflow-hidden content-card cursor-pointer hidden lg:block" onclick="toast('Opening series...','success')"><div class="flex gap-4 p-5"><div class="flex-shrink-0 w-28 h-[155px] rounded-xl overflow-hidden shadow-xl shadow-black/30"><img src="https://picsum.photos/seed/ser-3z/280/400.jpg" alt="" class="w-full h-full object-cover card-img"></div><div class="flex-1 min-w-0 flex flex-col justify-between py-0.5"><div><div class="flex items-center gap-2 mb-2.5"><span class="bg-h-gold/15 text-h-gold px-2.5 py-0.5 rounded-lg text-[10px] font-bold border border-h-gold/10">AWARD</span><span class="text-[11px] star-fill font-medium">★ 9.5</span></div><h4 class="text-[15px] font-bold text-white">The Advocate</h4><p class="text-[12px] text-h-muted mt-1.5 line-clamp-2 leading-relaxed">A gripping legal drama that exposes corruption at the highest levels...</p></div><div class="flex items-center gap-3 text-[11px] text-h-muted"><span>12 Episodes</span><span class="text-h-border">·</span><span>Drama</span><span class="text-h-border">·</span><span>2024</span></div></div></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- LIVE TV -->
+<section id="live" class="py-16">
+    <div class="max-w-[1480px] mx-auto px-4 lg:px-8 reveal">
+        <div class="flex items-center justify-between mb-8"><h2 class="text-xl font-bold text-white flex items-center gap-2.5"><span class="badge-live px-3 py-1 rounded-lg text-[10px] font-bold text-white flex items-center gap-1.5 tracking-wider uppercase"><span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>LIVE</span>Live TV Channels</h2><a href="#" class="text-h-sub text-[13px] hover:text-white transition-colors flex items-center gap-1 group">All 500+ Channels <span class="iconify text-sm group-hover:translate-x-0.5 transition-transform" data-icon="mdi:chevron-right"></span></a></div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div class="feat-card rounded-2xl p-5 text-center cursor-pointer group" onclick="toast('Opening channel...','success')"><div class="relative w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mb-3 group-hover:scale-110 transition-all duration-500 shadow-lg shadow-blue-700/20"><span class="text-white font-black text-xs">MBC</span><div class="absolute -inset-1 bg-blue-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div></div><p class="text-[13px] font-semibold text-white">MBC 1</p><p class="text-[10px] text-red-400 mt-1 flex items-center justify-center gap-1"><span class="w-1 h-1 bg-red-500 rounded-full animate-pulse"></span>Live Now</p></div>
+            <div class="feat-card rounded-2xl p-5 text-center cursor-pointer group" onclick="toast('Opening channel...','success')"><div class="relative w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center mb-3 group-hover:scale-110 transition-all duration-500 shadow-lg shadow-emerald-700/20"><span class="iconify text-white text-xl" data-icon="mdi:television"></span><div class="absolute -inset-1 bg-emerald-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div></div><p class="text-[13px] font-semibold text-white">Abu Dhabi TV</p><p class="text-[10px] text-red-400 mt-1 flex items-center justify-center gap-1"><span class="w-1 h-1 bg-red-500 rounded-full animate-pulse"></span>Live Now</p></div>
+            <div class="feat-card rounded-2xl p-5 text-center cursor-pointer group" onclick="toast('Opening channel...','success')"><div class="relative w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center mb-3 group-hover:scale-110 transition-all duration-500 shadow-lg shadow-purple-700/20"><span class="iconify text-white text-xl" data-icon="mdi:soccer"></span><div class="absolute -inset-1 bg-purple-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div></div><p class="text-[13px] font-semibold text-white">beIN Sports</p><p class="text-[10px] text-red-400 mt-1 flex items-center justify-center gap-1"><span class="w-1 h-1 bg-red-500 rounded-full animate-pulse"></span>Live Now</p></div>
+            <div class="feat-card rounded-2xl p-5 text-center cursor-pointer group" onclick="toast('Opening channel...','success')"><div class="relative w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center mb-3 group-hover:scale-110 transition-all duration-500 shadow-lg shadow-orange-700/20"><span class="iconify text-white text-xl" data-icon="mdi:movie-open"></span><div class="absolute -inset-1 bg-orange-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div></div><p class="text-[13px] font-semibold text-white">OSN Plus</p><p class="text-[10px] text-red-400 mt-1 flex items-center justify-center gap-1"><span class="w-1 h-1 bg-red-500 rounded-full animate-pulse"></span>Live Now</p></div>
+            <div class="feat-card rounded-2xl p-5 text-center cursor-pointer group" onclick="toast('Opening channel...','success')"><div class="relative w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-700 flex items-center justify-center mb-3 group-hover:scale-110 transition-all duration-500 shadow-lg shadow-cyan-700/20"><span class="iconify text-white text-xl" data-icon="mdi:newspaper-variant"></span><div class="absolute -inset-1 bg-cyan-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div></div><p class="text-[13px] font-semibold text-white">Al Jazeera</p><p class="text-[10px] text-red-400 mt-1 flex items-center justify-center gap-1"><span class="w-1 h-1 bg-red-500 rounded-full animate-pulse"></span>Live Now</p></div>
+            <div class="feat-card rounded-2xl p-5 text-center cursor-pointer group" onclick="toast('Opening channel...','success')"><div class="relative w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center mb-3 group-hover:scale-110 transition-all duration-500 shadow-lg shadow-red-700/20"><span class="iconify text-white text-xl" data-icon="mdi:music-note"></span><div class="absolute -inset-1 bg-red-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div></div><p class="text-[13px] font-semibold text-white">Rotana Music</p><p class="text-[10px] text-red-400 mt-1 flex items-center justify-center gap-1"><span class="w-1 h-1 bg-red-500 rounded-full animate-pulse"></span>Live Now</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- BOOKS -->
+<section id="books" class="py-16">
+    <div class="max-w-[1480px] mx-auto px-4 lg:px-8 reveal">
+        <div class="flex items-center justify-between mb-8"><h2 class="text-xl font-bold text-white flex items-center gap-2.5"><span class="w-8 h-8 rounded-lg bg-h-gold/10 flex items-center justify-center"><span class="iconify text-h-gold text-lg" data-icon="mdi:book-open-page-variant"></span></span>Reading Corner</h2><a href="#" class="text-h-sub text-[13px] hover:text-white transition-colors flex items-center gap-1 group">Browse Library <span class="iconify text-sm group-hover:translate-x-0.5 transition-transform" data-icon="mdi:chevron-right"></span></a></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div class="feat-card rounded-2xl overflow-hidden cursor-pointer group" onclick="toast('Opening book...','success')"><div class="flex gap-4 p-5"><div class="flex-shrink-0 w-20 h-28 rounded-xl overflow-hidden shadow-lg shadow-black/30"><img src="https://picsum.photos/seed/bk-1z/200/280.jpg" alt="" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"></div><div class="flex-1 min-w-0"><span class="text-[10px] text-h-gold font-bold bg-h-gold/8 px-2.5 py-0.5 rounded-full border border-h-gold/10">Novel</span><h4 class="text-[14px] font-bold text-white mt-2 truncate">Echoes of Tomorrow</h4><p class="text-[11px] text-h-muted mt-0.5">by Sarah Mitchell</p><p class="text-[11px] text-h-muted mt-2 line-clamp-2 leading-relaxed">A time-bending story about choices that ripple across decades...</p><div class="flex items-center gap-4 mt-3 text-[10px] text-h-muted"><span class="flex items-center gap-1"><span class="iconify text-xs" data-icon="mdi:eye"></span>89K</span><span class="flex items-center gap-1"><span class="iconify text-xs" data-icon="mdi:heart"></span>34K</span><span class="flex items-center gap-1 star-fill"><span class="iconify text-xs" data-icon="mdi:star"></span>4.8</span></div></div></div></div>
+            <div class="feat-card rounded-2xl overflow-hidden cursor-pointer group" onclick="toast('Opening book...','success')"><div class="flex gap-4 p-5"><div class="flex-shrink-0 w-20 h-28 rounded-xl overflow-hidden shadow-lg shadow-black/30"><img src="https://picsum.photos/seed/bk-2z/200/280.jpg" alt="" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"></div><div class="flex-1 min-w-0"><span class="text-[10px] text-h-pink font-bold bg-h-pink/8 px-2.5 py-0.5 rounded-full border border-h-pink/10">Romance</span><h4 class="text-[14px] font-bold text-white mt-2 truncate">When Lemon Trees Bloom</h4><p class="text-[11px] text-h-muted mt-0.5">by Nour Al-Omari</p><p class="text-[11px] text-h-muted mt-2 line-clamp-2 leading-relaxed">In a coastal village, two strangers discover that love writes its own story...</p><div class="flex items-center gap-4 mt-3 text-[10px] text-h-muted"><span class="flex items-center gap-1"><span class="iconify text-xs" data-icon="mdi:eye"></span>120K</span><span class="flex items-center gap-1"><span class="iconify text-xs" data-icon="mdi:heart"></span>56K</span><span class="flex items-center gap-1 star-fill"><span class="iconify text-xs" data-icon="mdi:star"></span>4.9</span></div></div></div></div>
+            <div class="feat-card rounded-2xl overflow-hidden cursor-pointer group hidden lg:block" onclick="toast('Opening book...','success')"><div class="flex gap-4 p-5"><div class="flex-shrink-0 w-20 h-28 rounded-xl overflow-hidden shadow-lg shadow-black/30"><img src="https://picsum.photos/seed/bk-3z/200/280.jpg" alt="" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"></div><div class="flex-1 min-w-0"><span class="text-[10px] text-h-accent font-bold bg-h-accent/8 px-2.5 py-0.5 rounded-full border border-h-accent/10">Thriller</span><h4 class="text-[14px] font-bold text-white mt-2 truncate">Room Number 7</h4><p class="text-[11px] text-h-muted mt-0.5">by Mohammed A.</p><p class="text-[11px] text-h-muted mt-2 line-clamp-2 leading-relaxed">A detective receives a cryptic message leading to a horrifying truth...</p><div class="flex items-center gap-4 mt-3 text-[10px] text-h-muted"><span class="flex items-center gap-1"><span class="iconify text-xs" data-icon="mdi:eye"></span>200K</span><span class="flex items-center gap-1"><span class="iconify text-xs" data-icon="mdi:heart"></span>87K</span><span class="flex items-center gap-1 star-fill"><span class="iconify text-xs" data-icon="mdi:star"></span>4.7</span></div></div></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- STATS -->
+<section class="py-20 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-h-accent/[0.02] to-transparent pointer-events-none"></div>
+    <div class="max-w-[1480px] mx-auto px-4 lg:px-8 relative z-10 reveal">
+        <div class="glass-strong rounded-3xl p-10 md:p-14">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
+                <div class="text-center"><p class="text-4xl md:text-5xl font-black text-white font-display counter-num" data-target="10000" data-suffix="+">0</p><p class="text-h-muted text-[13px] mt-2">Movies & Series</p></div>
+                <div class="text-center"><p class="text-4xl md:text-5xl font-black text-white font-display counter-num" data-target="500" data-suffix="+">0</p><p class="text-h-muted text-[13px] mt-2">Live Channels</p></div>
+                <div class="text-center"><p class="text-4xl md:text-5xl font-black text-white font-display counter-num" data-target="2000000" data-suffix="+">0</p><p class="text-h-muted text-[13px] mt-2">Happy Users</p></div>
+                <div class="text-center"><p class="text-4xl md:text-5xl font-black text-white font-display counter-num" data-target="99" data-suffix="%">0</p><p class="text-h-muted text-[13px] mt-2">Uptime</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FEATURES -->
+<section class="py-20 relative overflow-hidden">
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-h-accent/[0.02] rounded-full blur-[180px] pointer-events-none"></div>
+    <div class="max-w-[1480px] mx-auto px-4 lg:px-8 relative z-10">
+        <div class="text-center mb-16 reveal">
+            <p class="text-h-accent text-[12px] font-bold tracking-[.2em] uppercase mb-4">Features</p>
+            <h2 class="text-3xl md:text-5xl font-black text-white mb-5 font-display">Why <span class="grad-text">HamoStream</span>?</h2>
+            <p class="text-h-sub text-lg max-w-xl mx-auto">Built different. Every pixel, every feature — obsessed with your experience.</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div class="feat-card rounded-3xl p-7 text-center reveal reveal-delay-1"><div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-h-accent/15 to-h-accent/5 flex items-center justify-center mb-5 border border-h-accent/10"><span class="iconify text-h-accent text-[26px]" data-icon="mdi:quality-high"></span></div><h3 class="text-[15px] font-bold text-white mb-2">4K Ultra HD + HDR</h3><p class="text-[13px] text-h-muted leading-relaxed">Dolby Vision, HDR10+, crystal-clear streaming on supported devices.</p></div>
+            <div class="feat-card rounded-3xl p-7 text-center reveal reveal-delay-2"><div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-h-purple/15 to-h-purple/5 flex items-center justify-center mb-5 border border-h-purple/10"><span class="iconify text-h-purple text-[26px]" data-icon="mdi:download-circle-outline"></span></div><h3 class="text-[15px] font-bold text-white mb-2">Smart Downloads</h3><p class="text-[13px] text-h-muted leading-relaxed">Auto-download next episodes. Watch offline anywhere, anytime.</p></div>
+            <div class="feat-card rounded-3xl p-7 text-center reveal reveal-delay-3"><div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-h-cyan/15 to-h-cyan/5 flex items-center justify-center mb-5 border border-h-cyan/10"><span class="iconify text-h-cyan text-[26px]" data-icon="mdi:cellphone-link"></span></div><h3 class="text-[15px] font-bold text-white mb-2">Every Device</h3><p class="text-[13px] text-h-muted leading-relaxed">Phone, tablet, laptop, Smart TV, console — seamlessly synced.</p></div>
+            <div class="feat-card rounded-3xl p-7 text-center reveal reveal-delay-4"><div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-h-gold/15 to-h-gold/5 flex items-center justify-center mb-5 border border-h-gold/10"><span class="iconify text-h-gold text-[26px]" data-icon="mdi:account-group"></span></div><h3 class="text-[15px] font-bold text-white mb-2">5 Screens</h3><p class="text-[13px] text-h-muted leading-relaxed">Share with family. Everyone watches what they want, simultaneously.</p></div>
+            <div class="feat-card rounded-3xl p-7 text-center reveal reveal-delay-1"><div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-h-green/15 to-h-green/5 flex items-center justify-center mb-5 border border-h-green/10"><span class="iconify text-h-green text-[26px]" data-icon="mdi:shield-lock-outline"></span></div><h3 class="text-[15px] font-bold text-white mb-2">Military Security</h3><p class="text-[13px] text-h-muted leading-relaxed">End-to-end encryption. Your data stays completely private.</p></div>
+            <div class="feat-card rounded-3xl p-7 text-center reveal reveal-delay-2"><div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-h-pink/15 to-h-pink/5 flex items-center justify-center mb-5 border border-h-pink/10"><span class="iconify text-h-pink text-[26px]" data-icon="mdi:brain"></span></div><h3 class="text-[15px] font-bold text-white mb-2">AI Recommendations</h3><p class="text-[13px] text-h-muted leading-relaxed">Learns your taste. Gets smarter. Finds hidden gems you'll love.</p></div>
+            <div class="feat-card rounded-3xl p-7 text-center reveal reveal-delay-3"><div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-orange-500/15 to-orange-500/5 flex items-center justify-center mb-5 border border-orange-500/10"><span class="iconify text-orange-400 text-[26px]" data-icon="mdi:subtitles-outline"></span></div><h3 class="text-[15px] font-bold text-white mb-2">40+ Subtitles</h3><p class="text-[13px] text-h-muted leading-relaxed">Arabic, English, French, Turkish, Korean, Japanese & more.</p></div>
+            <div class="feat-card rounded-3xl p-7 text-center reveal reveal-delay-4"><div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-indigo-500/15 to-indigo-500/5 flex items-center justify-center mb-5 border border-indigo-500/10"><span class="iconify text-indigo-400 text-[26px]" data-icon="mdi:baby-face-outline"></span></div><h3 class="text-[15px] font-bold text-white mb-2">Kids Safe Mode</h3><p class="text-[13px] text-h-muted leading-relaxed">Dedicated profile with parental controls. Safe, curated content.</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="py-20">
+    <div class="max-w-[1480px] mx-auto px-4 lg:px-8">
+        <div class="text-center mb-14 reveal"><p class="text-h-gold text-[12px] font-bold tracking-[.2em] uppercase mb-4">Testimonials</p><h2 class="text-3xl md:text-4xl font-black text-white font-display">Loved by Millions</h2></div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div class="testi-card rounded-2xl p-7 reveal reveal-delay-1"><div class="flex items-center gap-1 mb-4 star-fill">★★★★★</div><p class="text-[14px] text-h-sub leading-relaxed mb-6">"The best streaming app I've ever used. The 4K quality is insane and there are zero ads on Pro. Worth every penny!"</p><div class="flex items-center gap-3"><img src="https://picsum.photos/seed/testi-1/64/64.jpg" class="w-10 h-10 rounded-full object-cover ring-2 ring-h-bg"><div><p class="text-[13px] font-semibold text-white">Ahmed Hassan</p><p class="text-[11px] text-h-muted">Pro Subscriber · Cairo</p></div></div></div>
+            <div class="testi-card rounded-2xl p-7 reveal reveal-delay-2"><div class="flex items-center gap-1 mb-4 star-fill">★★★★★</div><p class="text-[14px] text-h-sub leading-relaxed mb-6">"Live TV works flawlessly. I can watch beIN Sports and MBC simultaneously with my family. The kids mode is a lifesaver!"</p><div class="flex items-center gap-3"><img src="https://picsum.photos/seed/testi-2/64/64.jpg" class="w-10 h-10 rounded-full object-cover ring-2 ring-h-bg"><div><p class="text-[13px] font-semibold text-white">Sara Al-Rashid</p><p class="text-[11px] text-h-muted">VIP Subscriber · Riyadh</p></div></div></div>
+            <div class="testi-card rounded-2xl p-7 reveal reveal-delay-3"><div class="flex items-center gap-1 mb-4 star-fill">★★★★★</div><p class="text-[14px] text-h-sub leading-relaxed mb-6">"The book library surprised me! Found amazing Arabic novels I couldn't find anywhere else. Plus the AI recommendations are spot on."</p><div class="flex items-center gap-3"><img src="https://picsum.photos/seed/testi-3/64/64.jpg" class="w-10 h-10 rounded-full object-cover ring-2 ring-h-bg"><div><p class="text-[13px] font-semibold text-white">Mohammed K.</p><p class="text-[11px] text-h-muted">Pro Subscriber · Dubai</p></div></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" class="py-20">
+    <div class="max-w-[1480px] mx-auto px-4 lg:px-8">
+        <div class="text-center mb-14 reveal">
+            <p class="text-h-accent text-[12px] font-bold tracking-[.2em] uppercase mb-4">Pricing</p>
+            <h2 class="text-3xl md:text-5xl font-black text-white mb-5 font-display">Simple, Transparent <span class="grad-text">Pricing</span></h2>
+            <p class="text-h-sub text-lg mb-8">Start free for 7 days. Cancel anytime. No tricks.</p>
+            <div class="flex items-center justify-center gap-4">
+                <span id="monthLabel" class="text-sm font-semibold text-white">Monthly</span>
+                <div id="pricingToggle" class="toggle-track" onclick="togglePricing()"><div class="toggle-thumb"></div></div>
+                <span id="yearLabel" class="text-sm font-medium text-h-muted">Yearly <span class="text-h-green text-[11px] font-bold ml-1">Save 40%</span></span>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto reveal reveal-delay-1">
+            <div class="plan-card rounded-3xl p-8"><div class="mb-6"><h3 class="text-lg font-bold text-white">Basic</h3><p class="text-[13px] text-h-muted mt-1">For personal use</p></div><div class="mb-8"><span class="text-4xl font-black text-white price-val font-display" data-monthly="49" data-yearly="29">$49</span><span class="text-h-muted text-sm">/mo</span></div><ul class="space-y-3.5 mb-8 text-[13px]"><li class="flex items-center gap-2.5 text-h-text"><span class="iconify text-h-green text-base" data-icon="mdi:check-circle"></span>HD Quality</li><li class="flex items-center gap-2.5 text-h-text"><span class="iconify text-h-green text-base" data-icon="mdi:check-circle"></span>1 Screen</li><li class="flex items-center gap-2.5 text-h-text"><span class="iconify text-h-green text-base" data-icon="mdi:check-circle"></span>Limited Ads</li><li class="flex items-center gap-2.5 text-h-muted"><span class="iconify text-gray-600 text-base" data-icon="mdi:close-circle"></span>No Downloads</li><li class="flex items-center gap-2.5 text-h-muted"><span class="iconify text-gray-600 text-base" data-icon="mdi:close-circle"></span>No Live TV</li><li class="flex items-center gap-2.5 text-h-muted"><span class="iconify text-gray-600 text-base" data-icon="mdi:close-circle"></span>No Books</li></ul><button onclick="toast('Basic plan selected!','success')" class="w-full btn-glass py-3.5 rounded-2xl text-[13px] font-bold text-white">Start Free Trial</button></div>
+            <div class="plan-card plan-hot rounded-3xl p-8 relative"><div class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-h-accent to-orange-500 px-5 py-1.5 rounded-full text-[11px] font-bold text-white tracking-wide uppercase shadow-lg shadow-h-accent/20">Most Popular</div><div class="mb-6"><h3 class="text-lg font-bold text-white">Pro</h3><p class="text-[13px] text-h-muted mt-1">Best value</p></div><div class="mb-8"><span class="text-4xl font-black text-h-accent price-val font-display" data-monthly="99" data-yearly="59">$99</span><span class="text-h-muted text-sm">/mo</span></div><ul class="space-y-3.5 mb-8 text-[13px]"><li class="flex items-center gap-2.5 text-h-text"><span class="iconify text-h-green text-base" data-icon="mdi:check-circle"></span>Full HD + HDR</li><li class="flex items-center gap-2.5 text-h-text"><span class="iconify text-h-green text-base" data-icon="mdi:check-circle"></span>3 Screens</li><li class="flex items-center gap-2.5 text-h-text"><span class="iconify text-h-green text-base" data-icon="mdi:check-circle"></span>No Ads</li><li class="flex items-center gap-2.5 text-h-text"><span class="iconify text-h-green text-base" data-icon="mdi:check-circle"></span>Downloads</li><li class="flex items-center gap-2.5 text-h-text"><span class="iconify text-h-green text-base" data-icon="mdi:check-circle"></span>50+ Live Channels</li><li class="flex items-center gap-2.5 text-h-muted"><span class="iconify text-gray-600 text-base" data-icon="mdi:close-circle"></span>No Books</li></ul><button onclick="toast('Pro plan selected!','success')" class="w-full btn-accent py-3.5 rounded-2xl text-[13px] font-bold text-white">Start Free Trial</button></div>
+            <div class="plan-card rounded-3xl p-8"><div class="mb-6"><h3 class="text-lg font-bold text-white">VIP</h3><p class="text-[13px] text-h-muted mt-1">The full experience</p></div><div class="mb-8"><span class="text-4xl font-black text-white price-val font-display" data-monthly="149" data-yearly="89">$149</span><span class="text-h-muted text-sm">/mo</span></div><ul class="space-y-3.5 mb-8 text-[13px]"><li class="flex items-center gap-2.5 text-h-text"><span class="iconify text-h-green text-base" data-icon="mdi:check-circle"></span>4K + Dolby Vision</li><li class="flex items-center gap-2.5 text-h-text"><span class="iconify text-h-green text-base" data-icon="mdi:check-circle"></span>5 Screens</li><li class="flex items-center gap-2.5 text-h-text"><span class="iconify text-h-green text-base" data-icon="mdi:check-circle"></span>No Ads Ever</li><li class="flex items-center gap-2.5 text-h-text"><span class="iconify text-h-green text-base" data-icon="mdi:check-circle"></span>Unlimited Downloads</li><li class="flex items-center gap-2.5 text-h-text"><span class="iconify text-h-green text-base" data-icon="mdi:check-circle"></span>All 500+ Channels</li><li class="flex items-center gap-2.5 text-h-text"><span class="iconify text-h-green text-base" data-icon="mdi:check-circle"></span>Full Book Library</li></ul><button onclick="toast('VIP plan selected!','success')" class="w-full btn-glass py-3.5 rounded-2xl text-[13px] font-bold text-white">Start Free Trial</button></div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section class="py-20">
+    <div class="max-w-2xl mx-auto px-4 lg:px-8">
+        <div class="text-center mb-12 reveal"><h2 class="text-3xl font-black text-white font-display">FAQ</h2></div>
+        <div class="space-y-3 reveal reveal-delay-1">
+            <div class="glass rounded-2xl overflow-hidden"><button onclick="toggleFaq(this)" class="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-white/[0.02] transition-colors"><span class="text-[14px] font-semibold text-white">How does the 7-day free trial work?</span><span class="iconify faq-icon text-h-sub text-xl flex-shrink-0 ml-4" data-icon="mdi:plus"></span></button><div class="faq-content px-6 pb-5"><p class="text-[13px] text-h-muted leading-relaxed">Sign up with any plan and get full access for 7 days absolutely free. No charges until the trial ends. Cancel anytime before that and you pay nothing.</p></div></div>
+            <div class="glass rounded-2xl overflow-hidden"><button onclick="toggleFaq(this)" class="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-white/[0.02] transition-colors"><span class="text-[14px] font-semibold text-white">Can I switch plans later?</span><span class="iconify faq-icon text-h-sub text-xl flex-shrink-0 ml-4" data-icon="mdi:plus"></span></button><div class="faq-content px-6 pb-5"><p class="text-[13px] text-h-muted leading-relaxed">Absolutely! Upgrade or downgrade anytime. Changes take effect at the start of your next billing cycle. No penalties, no hidden fees.</p></div></div>
+            <div class="glass rounded-2xl overflow-hidden"><button onclick="toggleFaq(this)" class="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-white/[0.02] transition-colors"><span class="text-[14px] font-semibold text-white">What devices are supported?</span><span class="iconify faq-icon text-h-sub text-xl flex-shrink-0 ml-4" data-icon="mdi:plus"></span></button><div class="faq-content px-6 pb-5"><p class="text-[13px] text-h-muted leading-relaxed">iOS, Android, Smart TVs (Samsung, LG, Android TV), Apple TV, Fire TV, PlayStation, Xbox, and any modern web browser.</p></div></div>
+            <div class="glass rounded-2xl overflow-hidden"><button onclick="toggleFaq(this)" class="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-white/[0.02] transition-colors"><span class="text-[14px] font-semibold text-white">Is the content available in Arabic?</span><span class="iconify faq-icon text-h-sub text-xl flex-shrink-0 ml-4" data-icon="mdi:plus"></span></button><div class="faq-content px-6 pb-5"><p class="text-[13px] text-h-muted leading-relaxed">Yes! Full Arabic UI, Arabic subtitles for international content, and a massive library of Arabic originals, series, and movies.</p></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="py-20">
+    <div class="max-w-[1480px] mx-auto px-4 lg:px-8 reveal">
+        <div class="relative rounded-3xl overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-h-accent/20 via-h-purple/10 to-h-cyan/10"></div>
+            <div class="absolute inset-0 bg-[url('https://picsum.photos/seed/cta-bg/1920/600.jpg')] bg-cover bg-center opacity-10"></div>
+            <div class="relative z-10 text-center py-16 md:py-20 px-6">
+                <h2 class="text-3xl md:text-5xl font-black text-white mb-5 font-display">Ready to Start <span class="grad-text-sm">Watching?</span></h2>
+                <p class="text-h-sub text-lg max-w-xl mx-auto mb-8">Join 2 million+ users already enjoying the ultimate streaming experience. Free for 7 days.</p>
+                <div class="flex flex-wrap gap-4 justify-center">
+                    <button onclick="openModal('authModal')" class="btn-accent px-10 py-4 rounded-2xl text-[15px] font-bold text-white flex items-center gap-3 anim-borderGlow border border-transparent"><span class="iconify text-2xl" data-icon="mdi:play-circle"></span>Start Free Trial</button>
+                    <a href="https://wa.me/201211942007" target="_blank" class="btn-glass px-10 py-4 rounded-2xl text-[15px] font-semibold text-white flex items-center gap-3"><span class="iconify text-xl text-h-green" data-icon="mdi:whatsapp"></span>Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="border-t border-h-border pt-16 pb-8">
+    <div class="max-w-[1480px] mx-auto px-4 lg:px-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10 mb-14">
+            <div class="col-span-2 md:col-span-4 lg:col-span-1">
+                <div class="flex items-center gap-3 mb-5"><div class="w-10 h-10 rounded-xl bg-gradient-to-br from-h-accent to-red-900 flex items-center justify-center shadow-lg shadow-red-900/20"><span class="iconify text-white text-lg" data-icon="mdi:play"></span></div><span class="text-[16px] font-bold text-white">Hamo<span class="text-h-accent">Stream</span></span></div>
+                <p class="text-[13px] text-h-muted leading-relaxed mb-5 max-w-[260px]">The ultimate streaming hub. Movies, series, live TV, and books — all in one place.</p>
+                <div class="flex gap-2 flex-wrap">
+                    <a href="https://wa.me/201211942007" target="_blank" class="w-9 h-9 rounded-xl bg-white/[0.03] hover:bg-[#25D366] flex items-center justify-center transition-all duration-300 group relative" title="WhatsApp: 01211942007"><span class="iconify text-h-muted group-hover:text-white text-[15px]" data-icon="mdi:whatsapp"></span><span class="absolute -top-9 left-1/2 -translate-x-1/2 text-[9px] text-white bg-black/90 px-2 py-1 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">01211942007</span></a>
+                    <a href="https://wa.me/201508536392" target="_blank" class="w-9 h-9 rounded-xl bg-white/[0.03] hover:bg-[#25D366] flex items-center justify-center transition-all duration-300 group relative" title="WhatsApp: 01508536392"><span class="iconify text-h-muted group-hover:text-white text-[15px]" data-icon="mdi:whatsapp"></span><span class="absolute -top-9 left-1/2 -translate-x-1/2 text-[9px] text-white bg-black/90 px-2 py-1 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">01508536392</span></a>
+                    <a href="tel:+201211942007" class="w-9 h-9 rounded-xl bg-white/[0.03] hover:bg-h-accent flex items-center justify-center transition-all duration-300" title="Call: 01211942007"><span class="iconify text-h-muted hover:text-white text-[15px]" data-icon="mdi:phone"></span></a>
+                    <a href="tel:+201508536392" class="w-9 h-9 rounded-xl bg-white/[0.03] hover:bg-h-accent flex items-center justify-center transition-all duration-300" title="Call: 01508536392"><span class="iconify text-h-muted hover:text-white text-[15px]" data-icon="mdi:phone"></span></a>
+                    <a href="#" class="w-9 h-9 rounded-xl bg-white/[0.03] hover:bg-[#1877F2] flex items-center justify-center transition-all duration-300" title="Facebook"><span class="iconify text-h-muted hover:text-white text-[15px]" data-icon="mdi:facebook"></span></a>
+                    <a href="#" class="w-9 h-9 rounded-xl bg-white/[0.03] hover:bg-gradient-to-br hover:from-[#f09433] hover:via-[#e6683c] hover:to-[#bc1888] flex items-center justify-center transition-all duration-300" title="Instagram"><span class="iconify text-h-muted hover:text-white text-[15px]" data-icon="mdi:instagram"></span></a>
+                    <a href="#" class="w-9 h-9 rounded-xl bg-white/[0.03] hover:bg-[#0088cc] flex items-center justify-center transition-all duration-300" title="Telegram"><span class="iconify text-h-muted hover:text-white text-[15px]" data-icon="mdi:send"></span></a>
+                    <a href="#" class="w-9 h-9 rounded-xl bg-white/[0.03] hover:bg-[#FF0000] flex items-center justify-center transition-all duration-300" title="YouTube"><span class="iconify text-h-muted hover:text-white text-[15px]" data-icon="mdi:youtube"></span></a>
+                    <a href="#" class="w-9 h-9 rounded-xl bg-white/[0.03] hover:bg-white flex items-center justify-center transition-all duration-300" title="TikTok"><span class="iconify text-h-muted hover:text-black text-[15px]" data-icon="ic:baseline-tiktok"></span></a>
+                </div>
+            </div>
+            <div><h4 class="text-[11px] font-bold text-white uppercase tracking-[.15em] mb-5">Explore</h4><ul class="space-y-2.5 text-[13px]"><li><a href="#" class="text-h-muted hover:text-white transition-colors">Movies</a></li><li><a href="#" class="text-h-muted hover:text-white transition-colors">Series</a></li><li><a href="#" class="text-h-muted hover:text-white transition-colors">Live TV</a></li><li><a href="#" class="text-h-muted hover:text-white transition-colors">Books</a></li><li><a href="#" class="text-h-muted hover:text-white transition-colors">Anime</a></li><li><a href="#" class="text-h-muted hover:text-white transition-colors">Documentaries</a></li></ul></div>
+            <div><h4 class="text-[11px] font-bold text-white uppercase tracking-[.15em] mb-5">Support</h4><ul class="space-y-2.5 text-[13px]"><li><a href="#" class="text-h-muted hover:text-white transition-colors">Help Center</a></li><li><a href="https://wa.me/201211942007" target="_blank" class="text-h-muted hover:text-white transition-colors">Contact Us</a></li><li><a href="#" class="text-h-muted hover:text-white transition-colors">FAQ</a></li><li><a href="#" class="text-h-muted hover:text-white transition-colors">Report Issue</a></li></ul></div>
+            <div><h4 class="text-[11px] font-bold text-white uppercase tracking-[.15em] mb-5">Legal</h4><ul class="space-y-2.5 text-[13px]"><li><a href="#" class="text-h-muted hover:text-white transition-colors">Privacy Policy</a></li><li><a href="#" class="text-h-muted hover:text-white transition-colors">Terms of Service</a></li><li><a href="#" class="text-h-muted hover:text-white transition-colors">Cookie Policy</a></li><li><a href="#" class="text-h-muted hover:text-white transition-colors">DMCA</a></li></ul></div>
+            <div><h4 class="text-[11px] font-bold text-white uppercase tracking-[.15em] mb-5">Get the App</h4><div class="space-y-2.5"><a href="#" class="flex items-center gap-2.5 bg-white/[0.03] hover:bg-white/[0.07] rounded-xl px-4 py-2.5 transition-colors border border-white/[0.04]"><span class="iconify text-white text-xl" data-icon="mdi:apple"></span><div><p class="text-[9px] text-h-muted leading-none">Download on</p><p class="text-[12px] font-bold text-white leading-tight">App Store</p></div></a><a href="#" class="flex items-center gap-2.5 bg-white/[0.03] hover:bg-white/[0.07] rounded-xl px-4 py-2.5 transition-colors border border-white/[0.04]"><span class="iconify text-white text-xl" data-icon="mdi:google-play"></span><div><p class="text-[9px] text-h-muted leading-none">Get it on</p><p class="text-[12px] font-bold text-white leading-tight">Google Play</p></div></a><a href="#" class="flex items-center gap-2.5 bg-white/[0.03] hover:bg-white/[0.07] rounded-xl px-4 py-2.5 transition-colors border border-white/[0.04]"><span class="iconify text-white text-xl" data-icon="mdi:android"></span><div><p class="text-[9px] text-h-muted leading-none">Download</p><p class="text-[12px] font-bold text-white leading-tight">APK Direct</p></div></a></div></div>
+        </div>
+        <div class="border-t border-h-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p class="text-[12px] text-h-muted">© 2024 Hamo Streaming Hub. All rights reserved.</p>
+            <div class="flex items-center gap-5 text-[11px] text-h-muted">
+                <a href="https://wa.me/201211942007" target="_blank" class="flex items-center gap-1 hover:text-white transition-colors"><span class="iconify text-h-green" data-icon="mdi:whatsapp"></span>01211942007</a>
+                <a href="https://wa.me/201508536392" target="_blank" class="flex items-center gap-1 hover:text-white transition-colors"><span class="iconify text-h-green" data-icon="mdi:whatsapp"></span>01508536392</a>
+                <span class="flex items-center gap-1"><span class="iconify text-h-green" data-icon="mdi:shield-check"></span>SSL Secured</span>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- WHATSAPP FLOAT -->
+<a href="https://wa.me/201211942007" target="_blank" class="wa-float"><div class="wa-pulse"></div><div class="w-14 h-14 rounded-full bg-[#25D366] flex items-center justify-center shadow-xl shadow-green-600/30 relative z-10"><span class="iconify text-white text-2xl" data-icon="mdi:whatsapp"></span></div></a>
+
+<!-- BACK TO TOP -->
+<button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" class="fixed bottom-7 right-7 z-[90] w-12 h-12 rounded-full glass-strong flex items-center justify-center shadow-xl"><svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+
+<!-- AUTH MODAL -->
+<div id="authModal" class="fixed inset-0 z-[150] hidden">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onclick="closeModal('authModal')"></div>
+    <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
+        <div class="glass-strong rounded-3xl p-8 w-full max-w-[420px] anim-fadeUp border border-white/[0.06] shadow-2xl shadow-black/50">
+            <div class="flex items-center justify-between mb-7"><h2 class="text-xl font-bold text-white" id="authTitle">Welcome Back</h2><button onclick="closeModal('authModal')" class="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"><span class="iconify text-white" data-icon="mdi:close"></span></button></div>
+            <div class="flex bg-white/[0.03] rounded-xl p-1 mb-7 border border-white/[0.04]"><button onclick="switchAuth('login')" id="tabLogin" class="flex-1 py-2.5 rounded-lg text-[13px] font-medium bg-h-accent text-white transition-all">Sign In</button><button onclick="switchAuth('register')" id="tabReg" class="flex-1 py-2.5 rounded-lg text-[13px] font-medium text-h-muted transition-all">Sign Up</button></div>
+            <div id="formLogin">
+                <div class="space-y-4">
+                    <div><label class="text-[12px] text-h-muted mb-1.5 block">Email</label><div class="relative"><span class="iconify absolute left-3.5 top-1/2 -translate-y-1/2 text-h-muted text-sm" data-icon="mdi:email-outline"></span><input type="email" placeholder="you@example.com" class="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl py-3 pl-10 pr-4 text-white text-sm placeholder-h-muted/40 focus:outline-none focus:border-h-accent/30 focus:bg-white/[0.04] transition-all"></div></div>
+                    <div><label class="text-[12px] text-h-muted mb-1.5 block">Password</label><div class="relative"><span class="iconify absolute left-3.5 top-1/2 -translate-y-1/2 text-h-muted text-sm" data-icon="mdi:lock-outline"></span><input type="password" placeholder="••••••••" class="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl py-3 pl-10 pr-4 text-white text-sm placeholder-h-muted/40 focus:outline-none focus:border-h-accent/30 focus:bg-white/[0.04] transition-all"></div></div>
+                    <div class="flex items-center justify-between"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="w-3.5 h-3.5 rounded accent-[#e50914]"><span class="text-[12px] text-h-muted">Remember me</span></label><a href="#" class="text-[12px] text-h-accent hover:underline">Forgot password?</a></div>
+                    <button onclick="toast('Signed in successfully!','success');closeModal('authModal')" class="w-full btn-accent py-3.5 rounded-xl text-[13px] font-bold text-white">Sign In</button>
+                </div>
+                <div class="flex items-center gap-4 my-6"><div class="flex-1 h-px bg-white/[0.05]"></div><span class="text-[11px] text-h-muted">or continue with</span><div class="flex-1 h-px bg-white/[0.05]"></div></div>
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="toast('Google auth...','info')" class="flex items-center justify-center bg-white/[0.03] hover:bg-white/[0.07] rounded-xl py-3 transition-all border border-white/[0.04]"><span class="iconify text-white text-lg" data-icon="mdi:google"></span></button>
+                    <button onclick="toast('Apple auth...','info')" class="flex items-center justify-center bg-white/[0.03] hover:bg-white/[0.07] rounded-xl py-3 transition-all border border-white/[0.04]"><span class="iconify text-white text-lg" data-icon="mdi:apple"></span></button>
+                    <button onclick="toast('Facebook auth...','info')" class="flex items-center justify-center bg-white/[0.03] hover:bg-white/[0.07] rounded-xl py-3 transition-all border border-white/[0.04]"><span class="iconify text-white text-lg" data-icon="mdi:facebook"></span></button>
+                </div>
+            </div>
+            <div id="formReg" class="hidden">
+                <div class="space-y-4">
+                    <div><label class="text-[12px] text-h-muted mb-1.5 block">Full Name</label><div class="relative"><span class="iconify absolute left-3.5 top-1/2 -translate-y-1/2 text-h-muted text-sm" data-icon="mdi:account-outline"></span><input type="text" placeholder="John Doe" class="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl py-3 pl-10 pr-4 text-white text-sm placeholder-h-muted/40 focus:outline-none focus:border-h-accent/30 focus:bg-white/[0.04] transition-all"></div></div>
+                    <div><label class="text-[12px] text-h-muted mb-1.5 block">Email</label><div class="relative"><span class="iconify absolute left-3.5 top-1/2 -translate-y-1/2 text-h-muted text-sm" data-icon="mdi:email-outline"></span><input type="email" placeholder="you@example.com" class="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl py-3 pl-10 pr-4 text-white text-sm placeholder-h-muted/40 focus:outline-none focus:border-h-accent/30 focus:bg-white/[0.04] transition-all"></div></div>
+                    <div><label class="text-[12px] text-h-muted mb-1.5 block">Password</label><div class="relative"><span class="iconify absolute left-3.5 top-1/2 -translate-y-1/2 text-h-muted text-sm" data-icon="mdi:lock-outline"></span><input type="password" placeholder="Min 8 characters" class="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl py-3 pl-10 pr-4 text-white text-sm placeholder-h-muted/40 focus:outline-none focus:border-h-accent/30 focus:bg-white/[0.04] transition-all"></div></div>
+                    <button onclick="toast('Account created!','success');closeModal('authModal')" class="w-full btn-accent py-3.5 rounded-xl text-[13px] font-bold text-white">Create Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+window.addEventListener('load',()=>{setTimeout(()=>document.getElementById('loader').classList.add('hide'),800)});
+const glow=document.getElementById('cursorGlow');let mx=0,my=0,gx=0,gy=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY});
+function animateGlow(){gx+=(mx-gx)*.08;gy+=(my-gy)*.08;glow.style.left=gx+'px';glow.style.top=gy+'px';requestAnimationFrame(animateGlow)}
+animateGlow();
+(function(){const c=document.getElementById('particles'),ctx=c.getContext('2d');let w,h,pts=[];function resize(){w=c.width=innerWidth;h=c.height=innerHeight}resize();window.addEventListener('resize',resize);for(let i=0;i<80;i++)pts.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.2+0.2,dx:(Math.random()-0.5)*0.2,dy:(Math.random()-0.5)*0.2,o:Math.random()*0.3+0.05,c:Math.random()>.7?'139,92,246':'229,9,20'});function draw(){ctx.clearRect(0,0,w,h);pts.forEach(p=>{p.x+=p.dx;p.y+=p.dy;if(p.x<0)p.x=w;if(p.x>w)p.x=0;if(p.y<0)p.y=h;if(p.y>h)p.y=0;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba('+p.c+','+p.o+')';ctx.fill()});for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<120){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle='rgba(229,9,20,'+(0.03*(1-d/120))+')';ctx.lineWidth=0.5;ctx.stroke()}}requestAnimationFrame(draw)}draw()})();
+const nav=document.getElementById('nav'),announceH=34;
+window.addEventListener('scroll',()=>{nav.classList.toggle('nav-solid',scrollY>40);nav.style.top=scrollY>announceH?'0':'';document.querySelector('.announce-bar').style.transform=scrollY>announceH?'translateY(-100%)':'';document.querySelector('.announce-bar').style.transition='transform .3s ease';document.getElementById('backToTop').classList.toggle('visible',scrollY>600)});
+function toggleSearch(){const s=document.getElementById('searchOverlay');s.classList.toggle('hidden');if(!s.classList.contains('hidden'))document.getElementById('searchInput').focus()}
+function toggleMobile(){document.getElementById('mobilePanel').classList.toggle('open');document.getElementById('mobileOverlay').classList.toggle('hidden')}
+function scrollR(id,d){document.getElementById(id).scrollBy({left:d*580,behavior:'smooth'})}
+function setGenre(el){document.querySelectorAll('.genre-card').forEach(p=>{p.classList.remove('active-genre','text-white','font-semibold');p.classList.add('text-h-sub','font-medium')});el.classList.add('active-genre','text-white','font-semibold');el.classList.remove('text-h-sub','font-medium')}
+function openModal(id){document.getElementById(id).classList.remove('hidden');document.body.style.overflow='hidden'}
+function closeModal(id){document.getElementById(id).classList.add('hidden');document.body.style.overflow=''}
+function switchAuth(tab){const tl=document.getElementById('tabLogin'),tr=document.getElementById('tabReg'),fl=document.getElementById('formLogin'),fr=document.getElementById('formReg'),tt=document.getElementById('authTitle');if(tab==='login'){tl.classList.add('bg-h-accent','text-white');tl.classList.remove('text-h-muted');tr.classList.remove('bg-h-accent','text-white');tr.classList.add('text-h-muted');fl.classList.remove('hidden');fr.classList.add('hidden');tt.textContent='Welcome Back'}else{tr.classList.add('bg-h-accent','text-white');tr.classList.remove('text-h-muted');tl.classList.remove('bg-h-accent','text-white');tl.classList.add('text-h-muted');fr.classList.remove('hidden');fl.classList.add('hidden');tt.textContent='Create Account'}}
+let isYearly=false;
+function togglePricing(){isYearly=!isYearly;document.getElementById('pricingToggle').classList.toggle('active',isYearly);document.getElementById('monthLabel').classList.toggle('text-white',!isYearly);document.getElementById('monthLabel').classList.toggle('text-h-muted',isYearly);document.getElementById('yearLabel').classList.toggle('text-white',isYearly);document.getElementById('yearLabel').classList.toggle('text-h-muted',!isYearly);document.querySelectorAll('.price-val').forEach(el=>{el.textContent='$'+(isYearly?el.dataset.yearly:el.dataset.monthly)})}
+function toggleFaq(btn){const content=btn.nextElementSibling,icon=btn.querySelector('.faq-icon'),isOpen=content.classList.contains('open');document.querySelectorAll('.faq-content').forEach(c=>c.classList.remove('open'));document.querySelectorAll('.faq-icon').forEach(i=>i.classList.remove('rotated'));if(!isOpen){content.classList.add('open');icon.classList.add('rotated')}}
+function toast(msg,type){type=type||'info';const box=document.getElementById('toastBox');const colors={success:'bg-emerald-500/90 border-emerald-400',error:'bg-red-500/90 border-red-400',info:'bg-blue-500/90 border-blue-400',warning:'bg-amber-500/90 border-amber-400'};const icons={success:'mdi:check-circle',error:'mdi:alert-circle',info:'mdi:information',warning:'mdi:alert'};const t=document.createElement('div');t.className='flex items-center gap-3 px-5 py-3 rounded-2xl '+colors[type]+' border backdrop-blur-lg text-white text-[13px] font-medium shadow-2xl min-w-[260px]';t.style.animation='slideRight .4s ease both';t.innerHTML='<span class="iconify text-lg" data-icon="'+icons[type]+'"></span><span>'+msg+'</span>';box.appendChild(t);setTimeout(()=>{t.style.transition='all .3s ease';t.style.opacity='0';t.style.transform='translateX(20px)';setTimeout(()=>t.remove(),300)},3000)}
+document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})})});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal('authModal');const s=document.getElementById('searchOverlay');if(!s.classList.contains('hidden'))toggleSearch()}if(e.key==='/'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){e.preventDefault();toggleSearch()}});
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');if(e.target.querySelectorAll('.counter-num').length){e.target.querySelectorAll('.counter-num').forEach(startCounter)}}})},{threshold:0.08,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+function formatNum(n){if(n>=1000000)return(n/1000000).toFixed(0)+'M';if(n>=1000)return(n/1000).toFixed(0)+'K';return n}
+const counted=new Set();
+function startCounter(el){if(counted.has(el))return;counted.add(el);const target=parseInt(el.dataset.target);const suffix=el.dataset.suffix||'';let current=0;const step=Math.max(1,Math.floor(target/60));const timer=setInterval(()=>{current+=step;if(current>=target){current=target;clearInterval(timer)}el.textContent=formatNum(current)+suffix},30)}
+document.querySelectorAll('.counter-num').forEach(el=>{const parentReveal=el.closest('.reveal');if(!parentReveal)startCounter(el)});
+</script>
+</body>
+</html>
