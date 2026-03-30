@@ -3,30 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <title>خطط الاشتراك</title>
-    <style>
-        body { font-family: Arial, sans-serif; direction: rtl; }
-        .plan { border: 1px solid #ccc; margin: 15px; padding: 20px; border-radius: 5px; }
-        h2 { color: #333; }
-        .price { font-size: 24px; color: #007BFF; }
-    </style>
 </head>
-<body>
-    <h1>خطط الاشتراك</h1>
-    <div class="plan">
-        <h2>الخطة المجانية</h2>
-        <div class="price">$0 / شهريًا</div>
-        <p>تجربة أساسية مع ميزات محدودة.</p>
-    </div>
-    <div class="plan">
-        <h2>الخطة الأساسية</h2>
-        <div class="price">$5 / شهريًا</div>
-        <p>الوصول إلى معظم الميزات الأساسية.</p>
-    </div>
-    <div class="plan">
-        <h2>الخطة المميزة</h2>
-        <div class="price">$15 / شهريًا</div>
-        <p>الوصول الكامل إلى جميع الميزات.</p>
+<body class="bg-gray-100">
+    <div class="max-w-4xl mx-auto px-4 pt-10">
+        <h1 class="text-3xl font-bold text-center mb-6">خطط الاشتراك</h1>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">الخطة الأساسية</h2>
+                <p class="text-gray-700">تعتبر هذه الخطة مناسبة للأفراد.</p>
+                <ul class="my-4">
+                    <li>20 ساعة من البث</li>
+                    <li>دعم العملاء عبر البريد الإلكتروني</li>
+                </ul>
+                <p class="text-xl font-bold">$10 / شهر</p>
+            </div>
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">الخطة المتقدمة</h2>
+                <p class="text-gray-700">هذه الخطة مخصصة للاستخدامات المتوسطة.</p>
+                <ul class="my-4">
+                    <li>50 ساعة من البث</li>
+                    <li>دعم العملاء عبر الهاتف</li>
+                </ul>
+                <p class="text-xl font-bold">$25 / شهر</p>
+            </div>
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">الخطة الاحترافية</h2>
+                <p class="text-gray-700">الأفضل للاستخدامات الكبيرة.</p>
+                <ul class="my-4">
+                    <li>100 ساعة من البث</li>
+                    <li>دعم عملاء 24/7</li>
+                </ul>
+                <p class="text-xl font-bold">$50 / شهر</p>
+            </div>
+        </div>
+        <h2 class="text-xl font-bold mt-10 mb-4">مقارنة الميزات</h2>
+        <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+            <thead>
+                <tr class="bg-gray-300">
+                    <th class="py-2 px-4">الميزة</th>
+                    <th class="py-2 px-4">الخطة الأساسية</th>
+                    <th class="py-2 px-4">الخطة المتقدمة</th>
+                    <th class="py-2 px-4">الخطة الاحترافية</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="border px-4 py-2">عدد الساعات</td>
+                    <td class="border px-4 py-2">20 ساعة</td>
+                    <td class="border px-4 py-2">50 ساعة</td>
+                    <td class="border px-4 py-2">100 ساعة</td>
+                </tr>
+                <tr>
+                    <td class="border px-4 py-2">دعم العملاء</td>
+                    <td class="border px-4 py-2">عبر البريد الإلكتروني</td>
+                    <td class="border px-4 py-2">عبر الهاتف</td>
+                    <td class="border px-4 py-2">دعم 24/7</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </body>
 </html>
